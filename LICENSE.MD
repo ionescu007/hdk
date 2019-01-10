@@ -43,4 +43,4 @@ In return, we simply require that you agree:
 
 12. That all rights not expressly granted to you in this MSR-LA are reserved.
 
-13. That this MSR-LA shall be construed and controlled by the laws of the State of Washington, USA, without regard to conflicts of law. If any provision of this MSR-LA shall be deemed unenforceable or contrary to law, the rest of this MSR-LA shall remain in full effect and interpreted in an enforceable manner that most nearly captures the intent of the original language. ","Id":9399,"ShortName":"Custom","StartDate":"/Date(1204327150487-0800)/"}
+13. That this MSR-LA shall be construed and controlled by the laws of the State of Washington, USA, without regard to conflicts of law. If any provision of this MSR-LA shall be deemed unenforceable or contrary to law, the rest of this MSR-LA shall remain in full effect and interpreted in an enforceable manner that most nearly captures the intent of the original language. 
