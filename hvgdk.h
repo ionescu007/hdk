@@ -2077,7 +2077,8 @@ typedef union _HV_PARTITION_PRIVILEGE_MASK
         UINT64  StartVirtualProcessor : 1;
 // Symbol Files
         UINT64  Isolation : 1;
-        UINT64  Reserved3 : 9;
+        UINT64  Reserved3 : 9;
+
     };
 
 } HV_PARTITION_PRIVILEGE_MASK, *PHV_PARTITION_PRIVILEGE_MASK;
@@ -2247,6 +2248,23 @@ typedef UINT32 HV_VP_INDEX, *PHV_VP_INDEX;
 #define HV_VP_INDEX_SELF ((HV_VP_INDEX)-2) 
 
 #define HV_MAX_VP_INDEX (63)
+
+// 15.15.1 Type Definitions
+// VTL definition
+typedef UINT8 HV_VTL;
+
+// Input for targeting a specific VTL.
+
+typedef union
+{
+    UINT8 AsUINT8;
+    struct
+    {
+        UINT8 TargetVtl : 4;
+        UINT8 UseTargetVtl : 1;
+        UINT8 ReservedZ : 3;
+    };
+} HV_INPUT_VTL;
 
 //
 // Declare the MSR for determining the current VP index.
@@ -4402,7 +4420,9 @@ typedef enum _HV_REGISTER_NAME
     HvRegisterGuestCrashP2  = 0x00000212,
     HvRegisterGuestCrashP3  = 0x00000213,
     HvRegisterGuestCrashP4  = 0x00000214,
-    HvRegisterGuestCrashCtl = 0x00000215,    // Power State Configuration
+    HvRegisterGuestCrashCtl = 0x00000215,
+
+    // Power State Configuration
     HvRegisterPowerStateConfigC1    = 0x00000220,
     HvRegisterPowerStateTriggerC1   = 0x00000221,
     HvRegisterPowerStateConfigC2    = 0x00000222,
@@ -4421,7 +4441,8 @@ typedef enum _HV_REGISTER_NAME
     HvRegisterGuestIdle = 0x00000250,
 
     // Guest Debug
-    HvRegisterDebugDeviceOptions = 0x00000260,
+    HvRegisterDebugDeviceOptions = 0x00000260,
+
     // Pending Interruption Register
     HvX64RegisterPendingInterruption    = 0x00010002,
 
@@ -4546,7 +4567,8 @@ typedef enum _HV_REGISTER_NAME
     HvX64RegisterMtrrPhysBaseC  = 0x0008001C,
     HvX64RegisterMtrrPhysBaseD  = 0x0008001D,
     HvX64RegisterMtrrPhysBaseE  = 0x0008001E,
-    HvX64RegisterMtrrPhysBaseF  = 0x0008001F,
+    HvX64RegisterMtrrPhysBaseF  = 0x0008001F,
+
     HvX64RegisterMtrrPhysMask0  = 0x00080040,
     HvX64RegisterMtrrPhysMask1  = 0x00080041,
     HvX64RegisterMtrrPhysMask2  = 0x00080042,
@@ -4562,7 +4584,8 @@ typedef enum _HV_REGISTER_NAME
     HvX64RegisterMtrrPhysMaskC  = 0x0008004C,
     HvX64RegisterMtrrPhysMaskD  = 0x0008004D,
     HvX64RegisterMtrrPhysMaskE  = 0x0008004E,
-    HvX64RegisterMtrrPhysMaskF  = 0x0008004F,
+    HvX64RegisterMtrrPhysMaskF  = 0x0008004F,
+
     HvX64RegisterMtrrFix64k00000 = 0x00080070,
     HvX64RegisterMtrrFix16k80000 = 0x00080071,
     HvX64RegisterMtrrFix16kA0000 = 0x00080072,
@@ -4581,7 +4604,8 @@ typedef enum _HV_REGISTER_NAME
     HvX64RegisterGuestOsId              = 0x00090002,
     HvX64RegisterVpIndex                = 0x00090003,
     HvX64RegisterVpRuntime              = 0x00090004,
-    HvRegisterCpuManagementVersion      = 0x00090007,
+    HvRegisterCpuManagementVersion      = 0x00090007,
+
     // Virtual APIC registers MSRs
     HvX64RegisterEoi                    = 0x00090010,
     HvX64RegisterIcr                    = 0x00090011,
@@ -4665,9 +4689,13 @@ typedef enum _HV_REGISTER_NAME
     HvX64RegisterYmm12High = 0x000C001C,
     HvX64RegisterYmm13High = 0x000C001D,
     HvX64RegisterYmm14High = 0x000C001E,
-    HvX64RegisterYmm15High = 0x000C001F,    // Other MSRs
+    HvX64RegisterYmm15High = 0x000C001F,
+
+    // Other MSRs
     HvX64RegisterMsrIa32MiscEnable = 0x000800A0,
-    HvX64RegisterIa32FeatureControl = 0x000800A1,    // Synthetic VSM registers
+    HvX64RegisterIa32FeatureControl = 0x000800A1,
+
+    // Synthetic VSM registers
     //
     HvRegisterVsmVpVtlControl = 0x000D0000,
     HvRegisterVsmCodePageOffsets = 0x000D0002,
@@ -4708,9 +4736,10 @@ typedef const HV_REGISTER_NAME *PCHV_REGISTER_NAME;
 
 typedef struct HV_CALL_ATTRIBUTES _HV_INPUT_GET_VP_REGISTERS
 {
-    HV_PARTITION_ID     PartitionId;
-    HV_VP_INDEX         VpIndex;
-    HV_REGISTER_NAME    Names[];
+    HV_PARTITION_ID PartitionId;
+    HV_VP_INDEX VpIndex;
+    HV_INPUT_VTL InputVtl;
+    HV_REGISTER_NAME Names[];
 } HV_INPUT_GET_VP_REGISTERS, *PHV_INPUT_GET_VP_REGISTERS;
 
 typedef struct _HV_REGISTER_ASSOC
@@ -5126,10 +5155,6 @@ typedef struct HV_CALL_ATTRIBUTES _HV_INPUT_UNMAP_STATS_PAGE
 //
 
 // 15.2 Virtual Trust Levels (VTL)
-//
-// Define a virtual trust level (VTL)
-//
-typedef UINT8 HV_VTL, *PHV_VTL;
 #define HV_NUM_VTLS 2
 #define HV_INVALID_VTL ((HV_VTL) -1)
 #define HV_VTL_ALL 0xF
@@ -5144,7 +5169,8 @@ typedef union
         UINT64 MaximumVtl           : 4;
         UINT64 ReservedZ            : 44;
     };
-} HV_REGISTER_VSM_PARTITION_STATUS;
+} HV_REGISTER_VSM_PARTITION_STATUS;
+
 // 15.3.2.2 HvRegisterVsmVpStatus
 typedef union
 {
@@ -5170,7 +5196,8 @@ typedef union
         UINT64 ZeroMemoryOnReset        : 1;
         UINT64 ReservedZ                : 58;
     };
-} HV_REGISTER_VSM_PARTITION_CONFIG;
+} HV_REGISTER_VSM_PARTITION_CONFIG;
+
 // 15.5.2 Configuring Lower VTLs
 typedef union
 {
@@ -5206,7 +5233,8 @@ typedef union
         UINT64 VtlReturnOffset  : 12;
         UINT64 ReservedZ        : 40;
     };
-} HV_REGISTER_VSM_CODE_PAGE_OFFSETS;
+} HV_REGISTER_VSM_CODE_PAGE_OFFSETS;
+
 // 15.8.2 Definition
 typedef struct
 {
@@ -5248,7 +5276,8 @@ typedef struct
         };
     };
 
-} HV_VP_VTL_CONTROL;
+} HV_VP_VTL_CONTROL;
+
 // 15.13.4 Secure Register Intercepts
 
 typedef union
@@ -5284,24 +5313,9 @@ typedef union
     };
 } HV_REGISTER_CR_INTERCEPT_CONTROL;
 
-// 15.15.1 Type Definitions
-// VTL definition
-// typedef UINT8 HV_VTL;
-
-// Input for targeting a specific VTL.
-
+#if 0
+// 15.12.4 Virtual Interrupt Notification Assist
 typedef union
-{
-    UINT8 AsUINT8;
-    struct
-    {
-        UINT8 TargetVtl     : 4;
-        UINT8 UseTargetVtl  : 1;
-        UINT8 ReservedZ     : 3;
-    };
-} HV_INPUT_VTL;
-
-#if 0// 15.12.4 Virtual Interrupt Notification Assisttypedef union
 {
     UINT64 AsUINT64;
     struct
