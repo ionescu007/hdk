@@ -13,7 +13,7 @@ Developing against Hyper-V® is difficult enough without symbols, and we are luc
 
 ## Approach
 
-The original HvGdk.h is modified with the following information:
+The original `HvGdk.h` is modified with the following information:
 
 * Publicly available definitions/structures defined in the HvGdk.h that shipped with the Windows Driver Kit for Windows 7
 * Publicly available definitions/structures defined in the TLFS -- up to 5.0c for now
@@ -37,4 +37,4 @@ Please do not add any proprietary or intellectual property information, as this 
 Based upon my reading of the MSR-LA, it is perfectly legal to redistribute the original header file with modifications, as long as the copyright is kept (it is), modifications are clear, annotated, and date (they are), and you agree to the original license (academic/research use only). I am not a lawyer, so please consult with one if you intend to use this in any way -- but this repository and my changes appear to be covered by MSR-LA.
 </p>
 
-Please review LICENSE.MD for the full license.
+Please review `LICENSE.MD` for the full license.
