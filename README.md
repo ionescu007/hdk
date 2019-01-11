@@ -12,7 +12,7 @@ The original HvGdk.h is modified with the following information:
 
 * Publicly available definitions/structures defined in the HvGdk.h that shipped with the Windows Driver Kit for Windows 7
 * Publicly available definitions/structures defined in the TLFS -- up to 5.0c for now
-** This also includes inferred data from the TLFS -- for example, hypercalls are documented with their raw parameter/register mapping, but HvGdk.h contains data structures for each call -- these data sturctures are updated based on the parameter documentation in the TLFS.
+  * This also includes inferred data from the TLFS -- for example, hypercalls are documented with their raw parameter/register mapping, but HvGdk.h contains data structures for each call -- these data sturctures are updated based on the parameter documentation in the TLFS.
 * Publicly available symbol data, when present, from the kernel and certain user-mode binaries
 
 ## Contributions
@@ -24,3 +24,5 @@ Please do not add any proprietary or intellectual property information, as this 
 ## License / Legal
 
 Based upon my reading of the MSR-LA, it is perfectly legal to redistribute the original header file with modifications, as long as the copyright is kept (it is), modifications are clear, annotated, and date (they are), and you agree to the original license (academic/research use only). I am not a lawyer, so please consult with one if you intend to use this in any way -- but this repository and my changes appear to be covered by MSR-LA.
+
+Please review LICENSE.MD for the full license.
