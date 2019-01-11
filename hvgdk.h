@@ -633,6 +633,345 @@ typedef UINT16 HV_STATUS, *PHV_STATUS;
 #define HV_STATUS_INCOMPATIBLE_PROCESSOR ((HV_STATUS)0x0037)
 
 //
+// MessageId: HV_STATUS_INSUFFICIENT_DEVICE_DOMAINS
+//
+// MessageText:
+//
+// The maximum number of domains supported by the platform I/O remapping
+// hardware is currently in use.
+//
+#define HV_STATUS_INSUFFICIENT_DEVICE_DOMAINS ((HV_STATUS)0x0038)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_AES_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (AES).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_AES_NOT_SUPPORTED   ((HV_STATUS)0x0039)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_PCLMULQDQ_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (PCLMULQDQ).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_PCLMULQDQ_NOT_SUPPORTED ((HV_STATUS)0x003A)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_INCOMPATIBLE_XSAVE_FEATURES
+//
+// MessageText:
+//
+// The supplied restore state enables incompatible XSAVE features.
+// (Enabling AVX without XSAVE / enabling XSAVEOPT without XSAVE)
+//
+#define HV_STATUS_PROCESSOR_FEATURE_INCOMPATIBLE_XSAVE_FEATURES ((HV_STATUS)0x003B)
+
+//
+// MessageId: HV_STATUS_CPUID_FEATURE_VALIDATION_ERROR
+//
+// MessageText:
+//
+// Generic logical processor CPUID feature set validation error.
+//
+#define HV_STATUS_CPUID_FEATURE_VALIDATION_ERROR ((HV_STATUS)0x003C)
+
+//
+// MessageId: HV_STATUS_CPUID_XSAVE_FEATURE_VALIDATION_ERROR
+//
+// MessageText:
+//
+// CPUID XSAVE feature validation error.
+//
+#define HV_STATUS_CPUID_XSAVE_FEATURE_VALIDATION_ERROR ((HV_STATUS)0x003D)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_STARTUP_TIMEOUT
+//
+// MessageText:
+//
+// Processor startup timed out.
+//
+#define HV_STATUS_PROCESSOR_STARTUP_TIMEOUT ((HV_STATUS)0x003E)
+
+//
+// MessageId: HV_STATUS_SMX_ENABLED
+//
+// MessageText:
+//
+// SMX enabled by the BIOS.
+//
+#define HV_STATUS_SMX_ENABLED ((HV_STATUS)0x003F)
+
+//
+// MessageId: HV_STATUS_INVALID_LP_INDEX
+//
+// MessageText:
+//
+// The hypervisor could not perform the operation because the specified LP index is invalid.
+//
+#define HV_STATUS_INVALID_LP_INDEX ((HV_STATUS)0x0041)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_FMA4_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (FMA4).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_FMA4_NOT_SUPPORTED   ((HV_STATUS)0x0042)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_F16C_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (F16C).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_F16C_NOT_SUPPORTED   ((HV_STATUS)0x0043)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_RDRAND_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (RDRAND).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_RDRAND_NOT_SUPPORTED   ((HV_STATUS)0x0044)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_RDWRFSGS_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (Read/Write FS/GS).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_RDWRFSGS_NOT_SUPPORTED   ((HV_STATUS)0x0045)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_SMEP_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (SMEP).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_SMEP_NOT_SUPPORTED   ((HV_STATUS)0x0046)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_ENHANCED_FAST_STRING_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (AES).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_ENHANCED_FAST_STRING_NOT_SUPPORTED   ((HV_STATUS)0x0047)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_MOVBE_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (MOVBE).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_MOVBE_NOT_SUPPORTED   ((HV_STATUS)0x0048)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_BMI2_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (BMI1).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_BMI1_NOT_SUPPORTED   ((HV_STATUS)0x0049)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_BMI2_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (BMI2).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_BMI2_NOT_SUPPORTED   ((HV_STATUS)0x004A)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_HLE_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (HLE).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_HLE_NOT_SUPPORTED   ((HV_STATUS)0x004B)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_RTM_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (RTM).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_RTM_NOT_SUPPORTED   ((HV_STATUS)0x004C)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_XSAVE_FMA_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (FMA).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_XSAVE_FMA_NOT_SUPPORTED   ((HV_STATUS)0x004D)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_AVX2_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (AVX2).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_AVX2_NOT_SUPPORTED   ((HV_STATUS)0x004E)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_NPIEP1_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (NPIEP1).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_NPIEP1_NOT_SUPPORTED   ((HV_STATUS)0x004F)
+
+//
+// MessageId: HV_STATUS_INVALID_REGISTER_VALUE
+//
+// MessageText:
+//
+// The supplied register value is invalid.
+//
+#define HV_STATUS_INVALID_REGISTER_VALUE ((HV_STATUS)0x0050)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_RDSEED_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (RDSEED).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_RDSEED_NOT_SUPPORTED   ((HV_STATUS)0x0052)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_ADX_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (ADX).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_ADX_NOT_SUPPORTED   ((HV_STATUS)0x0053)
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_SMAP_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (SMAP).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_SMAP_NOT_SUPPORTED   ((HV_STATUS)0x0054)
+
+//
+// MessageId: HV_STATUS_NX_NOT_DETECTED
+//
+// MessageText:
+//
+// NX not detected on the machine.
+//
+#define HV_STATUS_NX_NOT_DETECTED ((HV_STATUS)(0x0055))
+
+//
+// MessageId: HV_STATUS_PROCESSOR_FEATURE_INTEL_PREFETCH_NOT_SUPPORTED
+//
+// MessageText:
+//
+// The supplied restore state requires an unsupported processor feature
+// (Intel Prefetch).
+//
+#define HV_STATUS_PROCESSOR_FEATURE_INTEL_PREFETCH_NOT_SUPPORTED   ((HV_STATUS)0x0056)
+
+//
+// MessageId: HV_STATUS_INVALID_DEVICE_ID
+//
+// MessageText:
+//
+// The supplied device ID is invalid.
+//
+#define HV_STATUS_INVALID_DEVICE_ID ((HV_STATUS)0x0057)
+
+//
+// MessageId: HV_STATUS_INVALID_DEVICE_STATE
+//
+// MessageText:
+//
+// The operation is not allowed in the current device state.
+//
+#define HV_STATUS_INVALID_DEVICE_STATE ((HV_STATUS)0x0058)
+
+//
+// MessageId: HV_STATUS_PENDING_PAGE_REQUESTS
+//
+// MessageText:
+//
+// The device had pending page requests which were discarded.
+//
+#define HV_STATUS_PENDING_PAGE_REQUESTS ((HV_STATUS)0x0059)
+
+//
+// MessageId: HV_STATUS_PAGE_REQUEST_INVALID
+//
+// MessageText:
+//
+// The supplied page request specifies a memory access that the guest does not
+// have permissions to perform.
+//
+#define HV_STATUS_PAGE_REQUEST_INVALID ((HV_STATUS)0x0060)
+
+//
+// MessageId: HV_STATUS_OPERATION_FAILED
+//
+// MessageText:
+//
+// The requested operation failed.
+//
+#define HV_STATUS_OPERATION_FAILED       ((HV_STATUS)0x0071)
+
+//
+// MessageId: HV_STATUS_NOT_ALLOWED_WITH_NESTED_VIRT_ACTIVE
+//
+// MessageText:
+//
+// The requested operation is not allowed due to one or more virtual processors
+// having nested virtualization active.
+//
+#define HV_STATUS_NOT_ALLOWED_WITH_NESTED_VIRT_ACTIVE  ((HV_STATUS)0x0072)
+
+//
 // MessageId: HV_STATUS_UNSUCCESSFUL
 //
 // MessageText:
@@ -3262,10 +3601,12 @@ typedef union _HV_X64_INTERRUPT_STATE_REGISTER
 
 typedef enum _HV_X64_PENDING_INTERRUPTION_TYPE
 {
-    HvX64PendingInterrupt           = 0,
-    HvX64PendingNmi                 = 2,
-    HvX64PendingException           = 3,
-    HvX64PendingSoftwareInterrupt   = 4
+    HvX64PendingInterrupt                   = 0,
+    HvX64PendingNmi                         = 2,
+    HvX64PendingException                   = 3,
+    HvX64PendingSoftwareInterrupt           = 4,
+    HvX64PendingPrivilegedSoftwareException = 5,
+    HvX64PendingSoftwareException           = 6
 } HV_X64_PENDING_INTERRUPTION_TYPE, *PHV_X64_PENDING_INTERRUPTION_TYPE;
 
 typedef union _HV_X64_PENDING_INTERRUPTION_REGISTER
@@ -3275,8 +3616,9 @@ typedef union _HV_X64_PENDING_INTERRUPTION_REGISTER
     {
         UINT32 InterruptionPending:1;
         UINT32 InterruptionType:3;
-        UINT32 DeliverErrorCode:1;
-        UINT32 Reserved:11;
+        UINT32 DeliverErrorCode : 1;
+        UINT32 InstructionLength : 4;
+        UINT32 NestedEvent : 1;        UINT32 Reserved:6;
         UINT32 InterruptionVector:16;
         UINT32 ErrorCode;
     };
@@ -3699,13 +4041,16 @@ typedef UINT64 HV_FLUSH_FLAGS, *PHV_FLUSH_FLAGS;
 #define HV_FLUSH_ALL_PROCESSORS              (0x00000001)
 #define HV_FLUSH_ALL_VIRTUAL_ADDRESS_SPACES  (0x00000002)
 #define HV_FLUSH_NON_GLOBAL_MAPPINGS_ONLY    (0x00000004)
+#define HV_FLUSH_USE_EXTENDED_RANGE_FORMAT   (0x00000008)
 #define HV_FLUSH_MASK                        (HV_FLUSH_ALL_PROCESSORS | \
                                               HV_FLUSH_ALL_VIRTUAL_ADDRESS_SPACES | \
-                                              HV_FLUSH_NON_GLOBAL_MAPPINGS_ONLY)
+                                              HV_FLUSH_NON_GLOBAL_MAPPINGS_ONLY | \
+                                              HV_FLUSH_USE_EXTENDED_RANGE_FORMAT)
 
 //
 // Address translation flags.
 //
+typedef UINT64 HV_TRANSLATE_GVA_CONTROL_FLAGS;
 
 #define HV_TRANSLATE_GVA_VALIDATE_READ       (0x0001)
 #define HV_TRANSLATE_GVA_VALIDATE_WRITE      (0x0002)
@@ -3714,6 +4059,7 @@ typedef UINT64 HV_FLUSH_FLAGS, *PHV_FLUSH_FLAGS;
 #define HV_TRANSLATE_GVA_SET_PAGE_TABLE_BITS (0x0010)
 #define HV_TRANSLATE_GVA_TLB_FLUSH_INHIBIT   (0x0020)
 #define HV_TRANSLATE_GVA_CONTROL_MASK        (0x003F)
+#define HV_TRANSLATE_GVA_INPUT_VTL_MASK      (0xFF00000000000000UI64)
 
 typedef UINT64 HV_TRANSLATE_GVA_CONTROL_FLAGS, *PHV_TRANSLATE_GVA_CONTROL_FLAGS;
 
@@ -3730,7 +4076,8 @@ typedef enum _HV_TRANSLATE_GVA_RESULT_CODE
     HvTranslateGvaGpaUnmapped             = 4,
     HvTranslateGvaGpaNoReadAccess         = 5,
     HvTranslateGvaGpaNoWriteAccess        = 6,
-    HvTranslateGvaGpaIllegalOverlayAccess = 7
+    HvTranslateGvaGpaIllegalOverlayAccess = 7,
+    HvTranslateGvaIntercept               = 8
 
 } HV_TRANSLATE_GVA_RESULT_CODE, *PHV_TRANSLATE_GVA_RESULT_CODE;
 
@@ -3745,6 +4092,15 @@ typedef union _HV_TRANSLATE_GVA_RESULT
         UINT32 Reserved : 23;
     };
 } HV_TRANSLATE_GVA_RESULT, *PHV_TRANSLATE_GVA_RESULT;
+
+typedef struct
+{
+    HV_TRANSLATE_GVA_RESULT_CODE ResultCode;
+    UINT32 CacheType : 8;
+    UINT32 OverlayPage : 1;
+    UINT32 Reserved : 23;
+    /* not in spec HV_X64_PENDING_EVENT EventInfo; */
+} HV_TRANSLATE_GVA_RESULT_EX;
 
 //
 // Read and write GPA access flags.
@@ -3935,6 +4291,10 @@ typedef enum _HV_MESSAGE_TYPE
     //
     HvMessageTypeEventLogBufferComplete = 0x80000040,
 
+    // 11.10.2 SynIC Message Types
+    // Hypercall intercept
+    HvMessageTypeHypercallIntercept = 0x80000050,
+
     //
     // Platform-specific processor intercept messages.
     //
@@ -3943,7 +4303,10 @@ typedef enum _HV_MESSAGE_TYPE
     HvMessageTypeX64CpuidIntercept = 0x80010002,
     HvMessageTypeX64ExceptionIntercept = 0x80010003,
     HvMessageTypeX64ApicEoi = 0x80010004,
-    HvMessageTypeX64LegacyFpError = 0x80010005
+    HvMessageTypeX64LegacyFpError = 0x80010005,
+
+    // 11.10.2 SynIC Message Types
+    HvMessageTypeRegisterIntercept = 0x80010006,
 
 } HV_MESSAGE_TYPE, *PHV_MESSAGE_TYPE;
 
@@ -5335,20 +5698,25 @@ typedef enum _HV_CALL_CODE
     HvCallInvokeHypervisorDebugger      = 0x000a,
 
     //
+    // V? VTL Calls
+    // 17 Appendix A
+    //
+    HvCallSendSyntheticClusterIpi = 0x000b,
+    HvCallModifyVtlProtectionMask = 0x000c,
+    HvCallEnablePartitionVtl = 0x000d,
+    HvCallDisablePartitionVtl = 0x000e,
+    HvCallEnableVpVtl = 0x000f,
+    HvCallDisableVpVtl = 0x0010,
+    HvCallVtlCall = 0x0011,
+    HvCallVtlReturn = 0x0012,
+
+    HvCallFlushVirtualAddressSpaceEx = 0x0013,
+    HvCallFlushVirtualAddressListEx = 0x0014,
+    HvCallSendSyntheticClusterIpiEx = 0x0015,
+
+    //
     // V1 enlightenment name space reservation.
     //
-
-    HvCallReserved000b                  = 0x000b,
-    HvCallReserved000c                  = 0x000c,
-    HvCallReserved000d                  = 0x000d,
-    HvCallReserved000e                  = 0x000e,
-    HvCallReserved000f                  = 0x000f,
-    HvCallReserved0010                  = 0x0010,
-    HvCallReserved0011                  = 0x0011,
-    HvCallReserved0012                  = 0x0012,
-    HvCallReserved0013                  = 0x0013,
-    HvCallReserved0014                  = 0x0014,
-    HvCallReserved0015                  = 0x0015,
     HvCallReserved0016                  = 0x0016,
     HvCallReserved0017                  = 0x0017,
     HvCallReserved0018                  = 0x0018,
@@ -5447,16 +5815,16 @@ typedef enum _HV_CALL_CODE
     // V1 Interrupt Management IDs
     //
 
-    HvCallAssertVirtualInterrupt        = 0x0055,
+    HvCallReserved0055 = 0x0055,
     HvCallClearVirtualInterrupt         = 0x0056,
 
     //
     // V1 Port IDs
     //
 
-    HvCallCreatePort                    = 0x0057,
+    HvCallReserved0057 = 0x0057,
     HvCallDeletePort                    = 0x0058,
-    HvCallConnectPort                   = 0x0059,
+    HvCallReserved0059 = 0x0059,
     HvCallGetPortProperty               = 0x005a,
     HvCallDisconnectPort                = 0x005b,
     HvCallPostMessage                   = 0x005c,
@@ -5525,6 +5893,50 @@ typedef enum _HV_CALL_CODE
     HvCallPerfNop,
     HvCallPerfNopInput,
     HvCallPerfNopOutput,
+
+    //
+    // 17 Appendix A
+    //
+    HvCallAddLogicalProcessor = 0x0076,
+    HvCallRemoveLogicalProcessor = 0x0077,
+    HvCallQueryNumaDistance = 0x0078,
+    HvCallSetLogicalProcessorProperty = 0x0079,
+    HvCallGetLogicalProcessorProperty = 0x007a,
+    HvCallGetSystemProperty = 0x007b,
+    HvCallMapDeviceInterrupt = 0x007c,
+    HvCallUnmapDeviceInterrupt = 0x007d,
+    HvCallRetargetDeviceInterrupt = 0x007e,
+    HvCallReserved007f = 0x007f,
+    HvCallMapDevicePages = 0x0080,
+    HvCallUnmapDevicePages = 0x0081,
+    HvCallAttachDevice = 0x0082,
+    HvCallDetachDevice = 0x0083,
+    HvCallNotifyStandbyTransition = 0x0084,
+    HvCallPrepareForSleep = 0x0085,
+    HvCallPrepareForHibernate = 0x0086,
+    HvCallNotifyPartitionEvent = 0x0087,
+    HvCallGetLogicalProcessorRegisters = 0x0088,
+    HvCallSetLogicalProcessorRegisters = 0x0089,
+    HvCallQueryAssociatedLpsforMca = 0x008a,
+    HvCallNotifyRingEmpty = 0x008b,
+    HvCallInjectSyntheticMachineCheck = 0x008c,
+    HvCallScrubPartition = 0x008d,
+    HvCallCollectLivedump = 0x008e,
+    HvCallDisableHypervisor = 0x008f,
+    HvCallModifySparseGpaPages = 0x0090,
+    HvCallRegisterInterceptResult = 0x0091,
+    HvCallUnregisterInterceptResult = 0x0092,
+    HvCallReserved0093 = 0x0093,
+    HvCallAssertVirtualInterrupt = 0x0094,
+    HvCallCreatePort = 0x0095,
+    HvCallConnectPort = 0x0096,
+    HvCallGetSpaPageList = 0x0097,
+    HvCallReserved0098 = 0x0098,
+    HvCallStartVirtualProcessor = 0x0099,
+    HvCallGetVpIndexFromApicId = 0x009a,
+
+    HvCallFlushGuestPhysicalAddressSpace = 0x00af,
+    HvCallFlushGuestPhysicalAddressList = 0x00b0,
 
     //
     // Total of all hypercalls
