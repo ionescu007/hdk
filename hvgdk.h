@@ -3618,7 +3618,8 @@ typedef union _HV_X64_PENDING_INTERRUPTION_REGISTER
         UINT32 InterruptionType:3;
         UINT32 DeliverErrorCode : 1;
         UINT32 InstructionLength : 4;
-        UINT32 NestedEvent : 1;        UINT32 Reserved:6;
+        UINT32 NestedEvent : 1;
+        UINT32 Reserved:6;
         UINT32 InterruptionVector:16;
         UINT32 ErrorCode;
     };
