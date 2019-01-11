@@ -1,5 +1,6 @@
 # hdk -- (unofficial) Hyper-V® Development Kit
 The HDK is an updated version of the HvGdk.h header file published under MSR-LA as part of the Singularity Research Kernel. It has been updated to add the latest definitions, structures and definitions as described in the Microsoft Hypervisor Top-Level Functional Specification (TLFS) 5.0c published June 2018.
+{: .text-justify}
 
 _Windows® and Hyper-V® are registered trademarks of Microsoft® Corporation. This repository and its contents are not sponsored or endorsed by the companies mentioned herein._
 
