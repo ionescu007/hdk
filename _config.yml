@@ -1,6 +1,6 @@
 theme: jekyll-theme-minimal
-title: test
-description: test2
+title: hdk
+description: Hyper-V® Development Kit
 use_logo: true
 logo: hvlogo_small.jpg
 show_downloads: "true"
