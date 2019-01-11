@@ -7250,7 +7250,6 @@ typedef union
     };
 } HV_REGISTER_CR_INTERCEPT_CONTROL;
 
-#if 0
 // 15.12.4 Virtual Interrupt Notification Assist
 typedef union
 {
@@ -7264,7 +7263,7 @@ typedef union
         UINT64 ReservedP : 53;
     };
 } HV_REGISTER_VSM_VINA;
-#endif 
+
 
 #if _MSC_VER >= 1200
 #pragma warning(pop)
