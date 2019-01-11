@@ -4,3 +4,4 @@ description: (unofficial) Hyper-V® Development Kit
 use_logo: true
 logo: hvlogo_small.jpg
 show_downloads: "true"
+markdown: kramdown
