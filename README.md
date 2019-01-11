@@ -12,7 +12,7 @@ The original HvGdk.h is modified with the following information:
 
 * Publicly available definitions/structures defined in the HvGdk.h that shipped with the Windows Driver Kit for Windows 7
 * Publicly available definitions/structures defined in the TLFS -- up to 5.0c for now
-  * This also includes inferred data from the TLFS -- for example, hypercalls are documented with their raw parameter/register mapping, but HvGdk.h contains data structures for each call -- these data sturctures are updated based on the parameter documentation in the TLFS.
+  * This also includes inferred data from the TLFS -- for example, hypercalls are documented with their raw parameter/register mapping, but HvGdk.h contains data structures for each call -- these data structures are updated based on the parameter documentation in the TLFS.
 * Publicly available symbol data, when present, from the kernel and certain user-mode binaries
 
 ## Contributions
