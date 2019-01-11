@@ -11,7 +11,7 @@ _Windows® and Hyper-V® are registered trademarks of Microsoft® Corporation. T
 Developing against Hyper-V® is difficult enough without symbols, and we are lucky that the HvGdk.H "leaked" at least once, and that the TLFS 5.0c exists. Unfortunately, the HvGdk.h is quite old, and the TLFS is always delayed by about a year, and does not contain readily usable definitions for programming.
 </p>
 
-## Input Data
+## Approach
 
 The original HvGdk.h is modified with the following information:
 
