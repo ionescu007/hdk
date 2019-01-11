@@ -1,4 +1,6 @@
 theme: jekyll-theme-minimal
 use_logo: true
-logo: hvlogo.jpg
+logo: hvlogo_small.jpg
 show_downloads: "true"
+breadcrumb_display: true
+breadcrumb_home_display: true
