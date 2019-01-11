@@ -1,3 +1,4 @@
 theme: jekyll-theme-minimal
-logo: https://github.com/ionescu007/hdk/raw/master/hvlogo.jpg
+use_logo: true
+logo: hvlogo.jpg
 show_downloads: "true"
