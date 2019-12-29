@@ -16,7 +16,9 @@ Author:
 
     *** Changes made based on DDK 7, symbols and TLFS 5.0c ***
     Alex Ionescu (@aionescu) 11-Jan-2018
-
+    
+    *** Changes made based on symbols ***
+    Alex Ionescu (@aionescu) 28-Dec-2019
 --*/
 
 #if !defined(_HVGDK_)
@@ -5661,283 +5663,467 @@ typedef enum _HV_CALL_CODE
     // Reserved Feature Code
     //
 
-    HvCallReserved0000                  = 0x0000,
+    HvCallReserved0000                          = 0x0000,
 
     //
     // V1 Address space enlightment IDs
     //
 
-    HvCallSwitchVirtualAddressSpace     = 0x0001,
-    HvCallFlushVirtualAddressSpace      = 0x0002,
-    HvCallFlushVirtualAddressList       = 0x0003,
+    HvCallSwitchVirtualAddressSpace             = 0x0001,
+    HvCallFlushVirtualAddressSpace              = 0x0002,
+    HvCallFlushVirtualAddressList               = 0x0003,
 
     //
     // V1 Power Management and Run time metrics IDs
     //
 
-    HvCallGetLogicalProcessorRunTime    = 0x0004,
-    HvCallDeprecated0005                = 0x0005,
-    HvCallDeprecated0006                = 0x0006,
-    HvCallDeprecated0007                = 0x0007,
+    HvCallGetLogicalProcessorRunTime            = 0x0004,
+    
+    //
+    // V? Additional Calls
+    // Symbols
+    //
+    
+    HvCallUpdateHvProcessorFeatures             = 0x0005,
+    HvSwitchAliasMap                            = 0x0006,
+    HvUpdateMicrocodeDatabase                   = 0x0007,
 
     //
     // V1 Spinwait enlightenment IDs
     //
 
-    HvCallNotifyLongSpinWait            = 0x0008,
+    HvCallNotifyLongSpinWait                    = 0x0008,
 
     //
     // V2 Core parking IDs
     //
 
-    HvCallParkLogicalProcessors         = 0x0009,
+    HvCallParkLogicalProcessors                 = 0x0009,
 
     //
     // V2 Invoke Hypervisor debugger
     //
 
-    HvCallInvokeHypervisorDebugger      = 0x000a,
+    HvCallInvokeHypervisorDebugger              = 0x000a,
 
     //
     // V? VTL Calls
     // 17 Appendix A
     //
-    HvCallSendSyntheticClusterIpi = 0x000b,
-    HvCallModifyVtlProtectionMask = 0x000c,
-    HvCallEnablePartitionVtl = 0x000d,
-    HvCallDisablePartitionVtl = 0x000e,
-    HvCallEnableVpVtl = 0x000f,
-    HvCallDisableVpVtl = 0x0010,
-    HvCallVtlCall = 0x0011,
-    HvCallVtlReturn = 0x0012,
+    
+    HvCallSendSyntheticClusterIpi               = 0x000b,
+    HvCallModifyVtlProtectionMask               = 0x000c,
+    HvCallEnablePartitionVtl                    = 0x000d,
+    HvCallDisablePartitionVtl                   = 0x000e,
+    HvCallEnableVpVtl                           = 0x000f,
+    HvCallDisableVpVtl                          = 0x0010,
+    HvCallVtlCall                               = 0x0011,
+    HvCallVtlReturn                             = 0x0012,
 
-    HvCallFlushVirtualAddressSpaceEx = 0x0013,
-    HvCallFlushVirtualAddressListEx = 0x0014,
-    HvCallSendSyntheticClusterIpiEx = 0x0015,
+    HvCallFlushVirtualAddressSpaceEx            = 0x0013,
+    HvCallFlushVirtualAddressListEx             = 0x0014,
+    HvCallSendSyntheticClusterIpiEx             = 0x0015,
 
     //
-    // V1 enlightenment name space reservation.
+    // V? secure hot patch support
+    // Symbols
     //
-    HvCallReserved0016                  = 0x0016,
-    HvCallReserved0017                  = 0x0017,
-    HvCallReserved0018                  = 0x0018,
-    HvCallReserved0019                  = 0x0019,
-    HvCallReserved001a                  = 0x001a,
-    HvCallReserved001b                  = 0x001b,
-    HvCallReserved001c                  = 0x001c,
-    HvCallReserved001d                  = 0x001d,
-    HvCallReserved001e                  = 0x001e,
-    HvCallReserved001f                  = 0x001f,
-    HvCallReserved0020                  = 0x0020,
-    HvCallReserved0021                  = 0x0021,
-    HvCallReserved0022                  = 0x0022,
-    HvCallReserved0023                  = 0x0023,
-    HvCallReserved0024                  = 0x0024,
-    HvCallReserved0025                  = 0x0025,
-    HvCallReserved0026                  = 0x0026,
-    HvCallReserved0027                  = 0x0027,
-    HvCallReserved0028                  = 0x0028,
-    HvCallReserved0029                  = 0x0029,
-    HvCallReserved002a                  = 0x002a,
-    HvCallReserved002b                  = 0x002b,
-    HvCallReserved002c                  = 0x002c,
-    HvCallReserved002d                  = 0x002d,
-    HvCallReserved002e                  = 0x002e,
-    HvCallReserved002f                  = 0x002f,
-    HvCallReserved0030                  = 0x0030,
-    HvCallReserved0031                  = 0x0031,
-    HvCallReserved0032                  = 0x0032,
-    HvCallReserved0033                  = 0x0033,
-    HvCallReserved0034                  = 0x0034,
-    HvCallReserved0035                  = 0x0035,
-    HvCallReserved0036                  = 0x0036,
-    HvCallReserved0037                  = 0x0037,
-    HvCallReserved0038                  = 0x0038,
-    HvCallReserved0039                  = 0x0039,
-    HvCallReserved003a                  = 0x003a,
-    HvCallReserved003b                  = 0x003b,
-    HvCallReserved003c                  = 0x003c,
-    HvCallReserved003d                  = 0x003d,
-    HvCallReserved003e                  = 0x003e,
-    HvCallReserved003f                  = 0x003f,
+    
+    HvCallGetImageInformation                   = 0x0016,
+    HvCallMapPatchPages                         = 0x0017,
+    HvCallCommitPatch                           = 0x0018,
+    HvCallReserved0019                          = 0x0019,
+    HvCallReserved001a                          = 0x001a,
+
+    //
+    // V? CPU performance support
+    // Symbols
+    //
+    
+    HvCallReadPerfRegister                      = 0x001b,
+    HvCallWritePerfRegister                     = 0x001c,
+    
+    //
+    // Expansion support
+    //
+    
+    HvCallReserved001d                          = 0x001d,
+    HvCallReserved001e                          = 0x001e,
+    HvCallReserved001f                          = 0x001f,
+    HvCallReserved0020                          = 0x0020,
+    HvCallReserved0021                          = 0x0021,
+    HvCallReserved0022                          = 0x0022,
+    HvCallReserved0023                          = 0x0023,
+    HvCallReserved0024                          = 0x0024,
+    HvCallReserved0025                          = 0x0025,
+    HvCallReserved0026                          = 0x0026,
+    HvCallReserved0027                          = 0x0027,
+    HvCallReserved0028                          = 0x0028,
+    HvCallReserved0029                          = 0x0029,
+    HvCallReserved002a                          = 0x002a,
+    HvCallReserved002b                          = 0x002b,
+    HvCallReserved002c                          = 0x002c,
+    HvCallReserved002d                          = 0x002d,
+    HvCallReserved002e                          = 0x002e,
+    HvCallReserved002f                          = 0x002f,
+    HvCallReserved0030                          = 0x0030,
+    HvCallReserved0031                          = 0x0031,
+    HvCallReserved0032                          = 0x0032,
+    HvCallReserved0033                          = 0x0033,
+    HvCallReserved0034                          = 0x0034,
+    HvCallReserved0035                          = 0x0035,
+    HvCallReserved0036                          = 0x0036,
+    HvCallReserved0037                          = 0x0037,
+    HvCallReserved0038                          = 0x0038,
+    HvCallReserved0039                          = 0x0039,
+    HvCallReserved003a                          = 0x003a,
+    HvCallReserved003b                          = 0x003b,
+    HvCallReserved003c                          = 0x003c,
+    HvCallReserved003d                          = 0x003d,
+    HvCallReserved003e                          = 0x003e,
+    HvCallReserved003f                          = 0x003f,
 
     //
     // V1 Partition Management IDs
     //
 
-    HvCallCreatePartition               = 0x0040,
-    HvCallInitializePartition           = 0x0041,
-    HvCallFinalizePartition             = 0x0042,
-    HvCallDeletePartition               = 0x0043,
-    HvCallGetPartitionProperty          = 0x0044,
-    HvCallSetPartitionProperty          = 0x0045,
-    HvCallGetPartitionId                = 0x0046,
-    HvCallGetNextChildPartition         = 0x0047,
+    HvCallCreatePartition                       = 0x0040,
+    HvCallInitializePartition                   = 0x0041,
+    HvCallFinalizePartition                     = 0x0042,
+    HvCallDeletePartition                       = 0x0043,
+    HvCallGetPartitionProperty                  = 0x0044,
+    HvCallSetPartitionProperty                  = 0x0045,
+    HvCallGetPartitionId                        = 0x0046,
+    HvCallGetNextChildPartition                 = 0x0047,
 
     //
     // V1 Resource Management IDs
     //
 
-    HvCallDepositMemory                 = 0x0048,
-    HvCallWithdrawMemory                = 0x0049,
-    HvCallGetMemoryBalance              = 0x004a,
+    HvCallDepositMemory                         = 0x0048,
+    HvCallWithdrawMemory                        = 0x0049,
+    HvCallGetMemoryBalance                      = 0x004a,
 
     //
     // V1 Guest Physical Address Space Management IDs
     //
 
-    HvCallMapGpaPages                   = 0x004b,
-    HvCallUnmapGpaPages                 = 0x004c,
+    HvCallMapGpaPages                           = 0x004b,
+    HvCallUnmapGpaPages                         = 0x004c,
 
     //
     // V1 Intercept Management IDs
     //
 
-    HvCallInstallIntercept              = 0x004d,
+    HvCallInstallIntercept                      = 0x004d,
 
     //
     // V1 Virtual Processor Management IDs
     //
 
-    HvCallCreateVp                      = 0x004e,
-    HvCallDeleteVp                      = 0x004f,
-    HvCallGetVpRegisters                = 0x0050,
-    HvCallSetVpRegisters                = 0x0051,
+    HvCallCreateVp                              = 0x004e,
+    HvCallDeleteVp                              = 0x004f,
+    HvCallGetVpRegisters                        = 0x0050,
+    HvCallSetVpRegisters                        = 0x0051,
 
     //
     // V1 Virtual TLB IDs
     //
 
-    HvCallTranslateVirtualAddress       = 0x0052,
-    HvCallReadGpa                       = 0x0053,
-    HvCallWriteGpa                      = 0x0054,
+    HvCallTranslateVirtualAddress               = 0x0052,
+    HvCallReadGpa                               = 0x0053,
+    HvCallWriteGpa                              = 0x0054,
 
     //
     // V1 Interrupt Management IDs
     //
 
-    HvCallReserved0055 = 0x0055,
-    HvCallClearVirtualInterrupt         = 0x0056,
+    HvAssertVirtualInterruptDeprecated          = 0x0055,
+    HvCallClearVirtualInterrupt                 = 0x0056,
 
     //
     // V1 Port IDs
     //
 
-    HvCallReserved0057 = 0x0057,
-    HvCallDeletePort                    = 0x0058,
-    HvCallReserved0059 = 0x0059,
-    HvCallGetPortProperty               = 0x005a,
-    HvCallDisconnectPort                = 0x005b,
-    HvCallPostMessage                   = 0x005c,
-    HvCallSignalEvent                   = 0x005d,
+    HvCreatePortDeprecated                      = 0x0057,
+    HvCallDeletePort                            = 0x0058,
+    HvConnectPortDeprecated                     = 0x0059,
+    HvCallGetPortProperty                       = 0x005a,
+    HvCallDisconnectPort                        = 0x005b,
+    HvCallPostMessage                           = 0x005c,
+    HvCallSignalEvent                           = 0x005d,
 
     //
     // V1 Partition State IDs
     //
 
-    HvCallSavePartitionState            = 0x005e,
-    HvCallRestorePartitionState         = 0x005f,
+    HvCallSavePartitionState                    = 0x005e,
+    HvCallRestorePartitionState                 = 0x005f,
 
     //
     // V1 Trace IDs
     //
 
-    HvCallInitializeEventLogBufferGroup  = 0x0060,
-    HvCallFinalizeEventLogBufferGroup   = 0x0061,
-    HvCallCreateEventLogBuffer          = 0x0062,
-    HvCallDeleteEventLogBuffer          = 0x0063,
-    HvCallMapEventLogBuffer             = 0x0064,
-    HvCallUnmapEventLogBuffer           = 0x0065,
-    HvCallSetEventLogGroupSources       = 0x0066,
-    HvCallReleaseEventLogBuffer         = 0x0067,
-    HvCallRequestEventLogGroupFlush     = 0x0068,
+    HvCallInitializeEventLogBufferGroup         = 0x0060,
+    HvCallFinalizeEventLogBufferGroup           = 0x0061,
+    HvCallCreateEventLogBuffer                  = 0x0062,
+    HvCallDeleteEventLogBuffer                  = 0x0063,
+    HvCallMapEventLogBuffer                     = 0x0064,
+    HvCallUnmapEventLogBuffer                   = 0x0065,
+    HvCallSetEventLogGroupSources               = 0x0066,
+    HvCallReleaseEventLogBuffer                 = 0x0067,
+    HvCallFlushEventLogBuffer                   = 0x0068,
 
     //
     // V1 Dbg Call IDs
     //
 
-    HvCallPostDebugData                 = 0x0069,
-    HvCallRetrieveDebugData             = 0x006a,
-    HvCallResetDebugSession             = 0x006b,
+    HvCallPostDebugData                         = 0x0069,
+    HvCallRetrieveDebugData                     = 0x006a,
+    HvCallResetDebugSession                     = 0x006b,
 
     //
     // V1 Stats IDs
     //
 
-    HvCallMapStatsPage                  = 0x006c,
-    HvCallUnmapStatsPage                = 0x006d,
+    HvCallMapStatsPage                          = 0x006c,
+    HvCallUnmapStatsPage                        = 0x006d,
 
     //
     // V2 Guest Physical Address Space Management IDs
     // 
 
-    HvCallMapSparseGpaPages             = 0x006e,
+    HvCallMapSparseGpaPages                     = 0x006e,
 
     //
     // V2 Set System Property
     //
     
-    HvCallSetSystemProperty             = 0x006f,
+    HvCallSetSystemProperty                     = 0x006f,
 
     //
     // V2 Port Ids.
     //
 
-    HvCallSetPortProperty               = 0x0070,
+    HvCallSetPortProperty                       = 0x0070,
 
     //
     // V2 Test IDs
     //
 
-    HvCallOutputDebugCharacter,
-    HvCallEchoIncrement,
-    HvCallPerfNop,
-    HvCallPerfNopInput,
-    HvCallPerfNopOutput,
+    HvCallOutputDebugCharacter                  = 0x0071,
+    HvCallEchoIncrement                         = 0x0072,
+    HvCallPerfNop                               = 0x0073,
+    HvCallPerfNopInput                          = 0x0074,
+    HvCallPerfNopOutput                         = 0x0075,
 
     //
     // 17 Appendix A
     //
-    HvCallAddLogicalProcessor = 0x0076,
-    HvCallRemoveLogicalProcessor = 0x0077,
-    HvCallQueryNumaDistance = 0x0078,
-    HvCallSetLogicalProcessorProperty = 0x0079,
-    HvCallGetLogicalProcessorProperty = 0x007a,
-    HvCallGetSystemProperty = 0x007b,
-    HvCallMapDeviceInterrupt = 0x007c,
-    HvCallUnmapDeviceInterrupt = 0x007d,
-    HvCallRetargetDeviceInterrupt = 0x007e,
-    HvCallReserved007f = 0x007f,
-    HvCallMapDevicePages = 0x0080,
-    HvCallUnmapDevicePages = 0x0081,
-    HvCallAttachDevice = 0x0082,
-    HvCallDetachDevice = 0x0083,
-    HvCallNotifyStandbyTransition = 0x0084,
-    HvCallPrepareForSleep = 0x0085,
-    HvCallPrepareForHibernate = 0x0086,
-    HvCallNotifyPartitionEvent = 0x0087,
-    HvCallGetLogicalProcessorRegisters = 0x0088,
-    HvCallSetLogicalProcessorRegisters = 0x0089,
-    HvCallQueryAssociatedLpsforMca = 0x008a,
-    HvCallNotifyRingEmpty = 0x008b,
-    HvCallInjectSyntheticMachineCheck = 0x008c,
-    HvCallScrubPartition = 0x008d,
-    HvCallCollectLivedump = 0x008e,
-    HvCallDisableHypervisor = 0x008f,
-    HvCallModifySparseGpaPages = 0x0090,
-    HvCallRegisterInterceptResult = 0x0091,
-    HvCallUnregisterInterceptResult = 0x0092,
-    HvCallReserved0093 = 0x0093,
-    HvCallAssertVirtualInterrupt = 0x0094,
-    HvCallCreatePort = 0x0095,
-    HvCallConnectPort = 0x0096,
-    HvCallGetSpaPageList = 0x0097,
-    HvCallReserved0098 = 0x0098,
-    HvCallStartVirtualProcessor = 0x0099,
-    HvCallGetVpIndexFromApicId = 0x009a,
+    
+    HvCallAddLogicalProcessor                   = 0x0076,
+    HvCallRemoveLogicalProcessor                = 0x0077,
+    HvCallQueryNumaDistance                     = 0x0078,
+    HvCallSetLogicalProcessorProperty           = 0x0079,
+    HvCallGetLogicalProcessorProperty           = 0x007a,
+    
+    HvCallGetSystemProperty                     = 0x007b,
+    
+    HvCallMapDeviceInterrupt                    = 0x007c,
+    HvCallUnmapDeviceInterrupt                  = 0x007d,
+    HvCallRetargetDeviceInterrupt               = 0x007e,
+    HvCallRetargetRootDeviceInterrupt           = 0x007f,
+    
+    HvCallMapDevicePages                        = 0x0080,
+    HvCallUnmapDevicePages                      = 0x0081,
+    
+    HvCallAttachDevice                          = 0x0082,
+    HvCallDetachDevice                          = 0x0083,
+    
+    HvCallEnterSleepState                       = 0x0084,
+    HvCallNotifyStandbyTransition               = 0x0085,
+    HvCallPrepareForHibernate                   = 0x0086,
+    
+    HvCallNotifyPartitionEvent                  = 0x0087,
+    
+    HvCallGetLogicalProcessorRegisters          = 0x0088,
+    HvCallSetLogicalProcessorRegisters          = 0x0089,
+    HvCallQueryAssociatedLpsforMca              = 0x008a,
+    
+    HvCallNotifyRingEmpty                       = 0x008b,
+    
+    HvCallInjectSyntheticMachineCheck           = 0x008c,
+    
+    HvCallScrubPartition                        = 0x008d,
+    
+    HvCallCollectLivedump                       = 0x008e,
+    
+    HvCallDisableHypervisor                     = 0x008f,
+    
+    HvCallModifySparseGpaPages                  = 0x0090,
+    
+    HvCallRegisterInterceptResult               = 0x0091,
+    HvCallUnregisterInterceptResult             = 0x0092,
+    
+    HvCallGetCoverageData                       = 0x0093,
+    
+    HvCallAssertVirtualInterrupt                = 0x0094,
+    
+    HvCallCreatePort                            = 0x0095,
+    HvCallConnectPort                           = 0x0096,
+    
+    HvCallGetSpaPageList                        = 0x0097,
+    HvCallReserved0098                          = 0x0098,
+    
+    HvCallStartVirtualProcessor                 = 0x0099,
+    HvCallGetVpIndexFromApicId                  = 0x009a,
 
-    HvCallFlushGuestPhysicalAddressSpace = 0x00af,
-    HvCallFlushGuestPhysicalAddressList = 0x00b0,
+    HvCallGetPowerProperty                      = 0x009b,
+    HvCallSetPowerProperty                      = 0x009C,
+    HvCallCreatePasidSpace                      = 0x009d,
+    HvCallDeletePasidSpace                      = 0x009e,
+    HvCallSetPasidAddressSpace                  = 0x009f,
+    HvCallFlushPasidAddressSpace                = 0x00a0,
+    HvCallFlushPasidAddressList                 = 0x00a1,
+    HvCallAttachPasidSpace                      = 0x00a2,
+    HvCallDetachPasidSpace                      = 0x00a3,
+    HvCallEnablePasid                           = 0x00a4,
+    HvCallDisablePasid                          = 0x00a5,
+    HvCallAcknowledgePageRequest                = 0x00a6,
+    
+    HvCallCreatePrQueue                         = 0x00a7,
+    HvCallDeletePrQueue                         = 0x00a8,
+    HvCallClearPrqStalled                       = 0x00a9,
+    HvCallGetDeviceEnabled                      = 0x00aa,
+    HvCallSetDeviceEnabled                      = 0x00ab,
+    
+    HvCallTranslateVirtualAddressEx             = 0x00ac,
+    
+    HvCallCheckForIoIntercept                   = 0x00ad,
+    
+    HvCallSetGpaPageAttributes                  = 0x00ae,
+    
+    HvCallFlushGuestPhysicalAddressSpace        = 0x00af,
+    HvCallFlushGuestPhysicalAddressList         = 0x00b0,
+    
+    HvCallCreateDeviceDomain                    = 0x00b1,
+    HvCallAttachDeviceDomain                    = 0x00b2,
+    HvCallMapDeviceGpaPages                     = 0x00b3,
+    HvCallUnmapDeviceGpaPages                   = 0x00b4,
+    
+    //
+    // V? CPU Group Support
+    //
+    
+    HvCallCreateCpuGroup                        = 0x00b5,
+    HvCallDeleteCpuGroup                        = 0x00b6,
+    HvCallGetCpuGroupProperty                   = 0x00b7,
+    HvCallSetCpuGroupProperty                   = 0x00b8,
+    HvCallGetCpuGroupAffinity                   = 0x00b9,
+    HvCallGetNextCpuGroup                       = 0x00ba,
+    HvCallGetNextCpuGroupPartition              = 0x00bb,
+    
+    HvCallAddPhysicalMemory                     = 0x00bc,
+    
+    HvCallCompleteIntercept                     = 0x00bd,
+    
+    HvCallPrecommitGpaPages                     = 0x00be,
+    HvCallUncommitGpaPages                      = 0x00bf,
+
+    HvCallReserved00C0                          = 0x00c0,
+    HvCallReserved00C1                          = 0x00c1,
+    
+    HvCallDispatchVp                            = 0x00c2,
+    
+    //
+    // V? IOMMU Support
+    // Symbols
+    //
+    
+    HvCallProcessIommuPrq                       = 0x00c3,
+    HvCallDetachDeviceDomain                    = 0x00c4,
+    HvCallDeleteDeviceDomain                    = 0x00c5,
+    HvCallReserved00C6                          = 0x00c6,
+    
+    //
+    // V? Sparse Page Support
+    // Symbols
+    //
+    
+    HvCallMapSparseDeviceGpaPages               = 0x00c7,
+    HvCallUnmapSparseDeviceGpaPages             = 0x00c8,
+    HvCallGetGpaPagesAccessState                = 0x00c9,
+    HvCallGetSparseGpaPagesAccessState          = 0x00ca,
+    HvCallReserved00CB                          = 0x00cb,
+    HvCallQueryVtlProtectionMaskRange           = 0x00cc,
+    HvCallModifyVtlProtectionMaskRange          = 0x00cd,
+    HvCallReserved00CE                          = 0x00ce,
+    HvCallReserved00CF                          = 0x00cf,
+    HvCallReserved00D0                          = 0x00d0,
+    HvCallReserved00D1                          = 0x00d1,
+    HvCallAcquireSparseGpaPageHostAccess        = 0x00d2,
+    HvCallReleaseSparseGpaPageHostAccess        = 0x00d3,
+    HvCallCheckSparseGpaPageVtlAccess           = 0x00d4,
+    HvCallReserved00D5                          = 0x00d5,
+    HvCallReserved00D6                          = 0x00d6,
+    HvCallAcquireSparseSpaPageHostAccess        = 0x00d7,
+    HvCallUnacquireSparseSpaPageHostAccess      = 0x00d8,
+    HvCallAcceptGpaPages                        = 0x00d9,
+    HvCallUnacceptGpaPages                      = 0x00da,
+    HvCallModifySparseGpaPageHostVisibility     = 0x00db,
+    HvCallLockSparseGpaPageMapping              = 0x00dc,
+    HvCallUnlockSparseGpaPageMapping            = 0x00dd,
+    
+    HvCallReserved00DE                          = 0x00de,
+    
+    HvCallGetInterceptData                      = 0x00df,
+
+    HvCallQueryDeviceInterruptTarget            = 0x00e0,
+    
+    HvCallMapVpStatePage                        = 0x00e1,
+    HvCallUnmapVpStatePage                      = 0x00e2,
+    
+    //
+    // V? XSAVE Support
+    // Symbols
+    //
+    
+    HvCallGetXsaveData                          = 0x00e3,
+    HvCallSetXsaveData                          = 0x00e4,
+    
+    //
+    // V? LAPIC Support
+    // Symbols
+    //
+    
+    HvCallGetLocalInterruptControllerState      = 0x00e5,
+    HvCallSetLocalInterruptControllerState      = 0x00e6,
+    
+    //
+    // V? IPT Support
+    // Symbols
+    //
+    
+    HvCallCreateIptBuffers                      = 0x00e7,
+    HvCallDeleteIptBuffers                      = 0x00e8,
+    HvCallControlHypervisorIptTrace             = 0x00e9,
+    
+    //
+    // V? Persisted Device Support
+    // Symbols
+    //
+    
+    HvCallReserveDeviceInterrupt                = 0x00ea,
+    HvCallPersistDevice                         = 0x00eb,
+    HvCallUnpersistDevice                       = 0x00ec,
+    HvCallPersistDeviceInterrupt                = 0x00ed,
+    
+    //
+    // V? Perf Processor Support
+    // Symbols
+    //
+    
+    HvCallUpdatePerformanceStateCountersForLp   = 0x00ee,
 
     //
     // Total of all hypercalls
