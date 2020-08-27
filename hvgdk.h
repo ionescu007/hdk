@@ -16,9 +16,12 @@ Author:
 
     *** Changes made based on DDK 7, symbols and TLFS 5.0c ***
     Alex Ionescu (@aionescu) 11-Jan-2018
-    
+
     *** Changes made based on symbols ***
     Alex Ionescu (@aionescu) 28-Dec-2019
+
+    *** Changes made based on new symbol source ***
+    Alex Ionescu (@aionescu) 25-Aug-2020
 --*/
 
 #if !defined(_HVGDK_)
@@ -1375,6 +1378,7 @@ typedef enum _HV_ARCHITECTURE
 {
     HvArchitectureX64,
     HvArchitectureX86,
+    HvArchitectureARM64,
     HvArchitectureMaximum
 } HV_ARCHITECTURE, *PHV_ARCHITECTURE;
 
@@ -1516,7 +1520,12 @@ typedef union _HV_X64_XSAVE_XFEM_REGISTER
         UINT64 LegacyX87 : 1;
         UINT64 LegacySse : 1;
         UINT64 Avx : 1;
-        UINT64 Reserved : 61;
+        UINT64 MpxBndreg : 1;
+        UINT64 MpxBndcsr : 1;
+        UINT64 Avx512Opmask : 1;
+        UINT64 Avx512Zmmhi : 1;
+        UINT64 Avx512Zmm16_31 : 1;
+        UINT64 Reserved : 56;
     };
 } HV_X64_XSAVE_XFEM_REGISTER, *PHV_X64_XSAVE_XFEM_REGISTER;
 
@@ -1531,11 +1540,9 @@ typedef struct DECLSPEC_ALIGN(64) _HV_X64_XSAVE_HEADER
     // area.
     //
     HV_X64_XSAVE_XFEM_REGISTER  XstateBv;          // Bit 63 MBZ
-    UINT64  Reserved0MBZ;      // Must be 0.
+    HV_X64_XSAVE_XFEM_REGISTER  XcompBv;
 
-    UINT16  RevisionID;
-    UINT16  Reserved1MBZ;      // Must be 0.
-    UINT32  Reserved2;
+    UINT64  Reserved2;
     UINT64  Reserved3;
 
     UINT64  Reserved4;
@@ -1569,22 +1576,9 @@ typedef union DECLSPEC_ALIGN(64) _HV_X64_X_REGISTERS
         HV_X64_FP_CONTROL_STATUS_REGISTER   FpControlStatus;
         HV_X64_XMM_CONTROL_STATUS_REGISTER  XmmControlStatus;
         HV_X64_FP_MMX_REGISTER              FpMmx[8];
-
-        union
-        {
-            HV_UINT128                      Xmm[16];
-            HV_UINT128                      YmmLow[16];
-        };
-
+        HV_UINT128                          Xmm[16];
         HV_UINT128                          Reserved[6];
-
         HV_X64_XSAVE_HEADER                 Header;
-
-        //
-        // AVX context: the upper 128 bits of the YMM registers. The
-        // lower 128 bits overlay the XMM registers.
-        //
-        HV_UINT128                          YmmHigh[16];
     };
 
     UINT8 XSaveArea[HV_X64_XSAVE_AREA_SIZE];
@@ -2182,11 +2176,13 @@ typedef enum _HV_INTERRUPT_TYPE
     HvX64InterruptTypeInit              = 0x0005,
     HvX64InterruptTypeSipi              = 0x0006,
     HvX64InterruptTypeExtInt            = 0x0007,
+    HvX64InterruptTypeLocalInt0         = 0x0008,
+    HvX64InterruptTypeLocalInt1         = 0x0009,
 
     //
     // Maximum (exclusive) value of interrupt type.
     //
-    HvX64InterruptTypeMaximum           = 0x008
+    HvX64InterruptTypeMaximum           = 0x000A
 
 } HV_INTERRUPT_TYPE, *PHV_INTERRUPT_TYPE;
 
@@ -2481,8 +2477,9 @@ typedef enum
 {
     HvEventLogTypeGlobalSystemEvents = 0x00000000,
     HvEventLogTypeLocalDiagnostics   = 0x00000001,
+    HvEventLogTypeSystemDiagnostics  = 0x00000002,
 
-    HvEventLogTypeMaximum            = 0x00000001,
+    HvEventLogTypeMaximum            = 0x00000002,
 } HV_EVENTLOG_TYPE;
 
 
@@ -3285,9 +3282,11 @@ typedef struct _HV_X64_MSR_STIMER_CONFIG_CONTENTS
             UINT64 Periodic   : 1;
             UINT64 Lazy       : 1;
             UINT64 AutoEnable : 1;
-            UINT64 Reserved1  :12;
+            UINT64 ApicVector : 8;
+            UINT64 DirectMode : 1;
+            UINT64 ReservedZ1 : 1;
             UINT64 SINTx      : 4;
-            UINT64 Reserved2  :14;
+            UINT64 ReservedZ2 :44;
         };
     };
 } HV_X64_MSR_STIMER_CONFIG_CONTENTS, *PHV_X64_MSR_STIMER_CONFIG_CONTENTS;
@@ -3367,14 +3366,14 @@ typedef union _HV_X64_MSR_REFERENCE_TSC_CONTENTS
 //
 // Define structure of the reference TSC page.
 //
-
 typedef struct _HV_REFERENCE_TSC_PAGE
 {
     volatile UINT32 TscSequence;
     UINT32 Reserved1;
     volatile UINT64 TscScale;
     volatile INT64 TscOffset;
-    UINT64 Reserved2[509];
+    volatile UINT64 TimelineBias;
+    UINT64 Reserved2[508];
 } HV_REFERENCE_TSC_PAGE, *PHV_REFERENCE_TSC_PAGE;
 
 typedef union _HV_PARTITION_PRIVILEGE_MASK
@@ -3590,6 +3589,16 @@ typedef union _HV_INTERCEPT_SUSPEND_REGISTER
     };
 } HV_INTERCEPT_SUSPEND_REGISTER, *PHV_INTERCEPT_SUSPEND_REGISTER;
 
+typedef union _HV_DISPATCH_SUSPEND_REGISTER
+{
+    UINT64 AsUINT64;
+    struct
+    {
+        UINT64 Suspended    : 1;
+        UINT64 Reserved     : 63;
+    };
+} HV_DISPATCH_SUSPEND_REGISTER, *PHV_DISPATCH_SUSPEND_REGISTER;
+
 typedef union _HV_X64_INTERRUPT_STATE_REGISTER
 {
     UINT64 AsUINT64;
@@ -3600,6 +3609,19 @@ typedef union _HV_X64_INTERRUPT_STATE_REGISTER
         UINT64 Reserved:62;
     };
 } HV_X64_INTERRUPT_STATE_REGISTER, *PHV_X64_INTERRUPT_STATE_REGISTER;
+
+typedef union _HV_X64_MSR_NPIEP_CONFIG_CONTENTS
+{
+    UINT64 AsUINT64;
+    struct
+    {
+        UINT64 PreventSgdt  : 1;
+        UINT64 PreventSidt  : 1;
+        UINT64 PreventSldt  : 1;
+        UINT64 PreventStr   : 1;
+        UINT64 Reserved     : 60;
+    };
+} HV_X64_MSR_NPIEP_CONFIG_CONTENTS, *PHV_X64_MSR_NPIEP_CONFIG_CONTENTS;
 
 typedef enum _HV_X64_PENDING_INTERRUPTION_TYPE
 {
@@ -3627,22 +3649,74 @@ typedef union _HV_X64_PENDING_INTERRUPTION_REGISTER
     };
 } HV_X64_PENDING_INTERRUPTION_REGISTER, *PHV_X64_PENDING_INTERRUPTION_REGISTER;
 
+typedef enum _HV_X64_PENDING_EVENT_TYPE
+{
+    HvX64PendingEventException              = 0,
+    HvX64PendingEventMemoryIntercept        = 1,
+    HvX64PendingEventNestedMemoryIntercept  = 2,
+    HvX64PendingEventVirtualizationFault    = 3,
+    HvX64PendingEventHypercallOutput        = 4,
+    HvX64PendingExtInt                      = 5,
+    HvX64PendingEventShadowIpt              = 6
+} HV_X64_PENDING_EVENT_TYPE, * PHV_X64_PENDING_EVENT_TYPE;
+
+typedef union _HV_X64_PENDING_EXCEPTION_EVENT
+{
+    UINT64 AsUINT64[2];
+    struct
+    {
+        struct
+        {
+            UINT32 EventPending     : 1;
+            UINT32 EventType        : 3;
+            UINT32 Reserved0        : 4;
+            UINT32 DeliverErrorCode : 1;
+            UINT32 Reserved1        : 7;
+            UINT32 Vector           : 16;
+        };
+        UINT32 ErrorCode;
+        UINT64 ExceptionParameter;
+    };
+} HV_X64_PENDING_EXCEPTION_EVENT, *PHV_X64_PENDING_EXCEPTION_EVENT;
+
+typedef union _HV_X64_PENDING_VIRTUALIZATION_FAULT_EVENT
+{
+    UINT64 AsUINT64[2];
+    struct
+    {
+        struct
+        {
+            UINT32 EventPending     : 1;
+            UINT32 EventType        : 3;
+            UINT32 Reserved0        : 4;
+            UINT32 Reserved1        : 8;
+            UINT32 Parameter0       : 16;
+        };
+        UINT32 Code;
+        UINT64 Parameter1;
+    };
+} HV_X64_PENDING_VIRTUALIZATION_FAULT_EVENT, *PHV_X64_PENDING_VIRTUALIZATION_FAULT_EVENT;
+
 typedef union _HV_REGISTER_VALUE
 {
-    HV_UINT128                              Reg128;
-    UINT64                                  Reg64;
-    UINT32                                  Reg32;
-    UINT16                                  Reg16;
-    UINT8                                   Reg8;
-    HV_X64_FP_REGISTER                      Fp;
-    HV_X64_FP_CONTROL_STATUS_REGISTER       FpControlStatus;
-    HV_X64_XMM_CONTROL_STATUS_REGISTER      XmmControlStatus;
-    HV_X64_SEGMENT_REGISTER                 Segment;
-    HV_X64_TABLE_REGISTER                   Table;
-    HV_EXPLICIT_SUSPEND_REGISTER            ExplicitSuspend;
-    HV_INTERCEPT_SUSPEND_REGISTER           InterceptSuspend;
-    HV_X64_INTERRUPT_STATE_REGISTER         InterruptState;
-    HV_X64_PENDING_INTERRUPTION_REGISTER    PendingInterruption;
+    HV_UINT128                                  Reg128;
+    UINT64                                      Reg64;
+    UINT32                                      Reg32;
+    UINT16                                      Reg16;
+    UINT8                                       Reg8;
+    HV_X64_FP_REGISTER                          Fp;
+    HV_X64_FP_CONTROL_STATUS_REGISTER           FpControlStatus;
+    HV_X64_XMM_CONTROL_STATUS_REGISTER          XmmControlStatus;
+    HV_X64_SEGMENT_REGISTER                     Segment;
+    HV_X64_TABLE_REGISTER                       Table;
+    HV_EXPLICIT_SUSPEND_REGISTER                ExplicitSuspend;
+    HV_INTERCEPT_SUSPEND_REGISTER               InterceptSuspend;
+    HV_DISPATCH_SUSPEND_REGISTER                DispatchSuspend;
+    HV_X64_INTERRUPT_STATE_REGISTER             InterruptState;
+    HV_X64_PENDING_INTERRUPTION_REGISTER        PendingInterruption;
+    HV_X64_MSR_NPIEP_CONFIG_CONTENTS            NpiepConfig;
+    HV_X64_PENDING_EXCEPTION_EVENT              PendingExceptionEvent;
+    HV_X64_PENDING_VIRTUALIZATION_FAULT_EVENT   PendingVirtualizationFaultEvent;
 } HV_REGISTER_VALUE, *PHV_REGISTER_VALUE;
 typedef const HV_REGISTER_VALUE *PCHV_REGISTER_VALUE;
 
@@ -3793,8 +3867,8 @@ typedef union _HV_SCHEDULING_CONTROL
 //
 typedef enum _HV_HYPERVISOR_INTERFACE
 {
-    HvMicrosoftHypervisorInterface = '1#vH'
-
+    HvMicrosoftHypervisorInterface = '1#vH',
+    HvMicrosoftXboxNanovisor = 'vnbX'
 } HV_HYPERVISOR_INTERFACE, *PHV_HYPERVISOR_INTERFACE;
 
 
@@ -3861,9 +3935,446 @@ typedef enum _HV_CPUID_FUNCTION
     HvCpuIdFunctionMsHvVersion                  = 0x40000002,
     HvCpuIdFunctionMsHvFeatures                 = 0x40000003,
     HvCpuIdFunctionMsHvEnlightenmentInformation = 0x40000004,
-    HvCpuIdFunctionMsHvImplementationLimits     = 0x40000005
+    HvCpuIdFunctionMsHvImplementationLimits     = 0x40000005,
+    HvCpuIdFunctionMsHvHardwareFeatures         = 0x40000006,
+    HvCpuIdFunctionMsHvCpuManagementFeatures    = 0x40000007,
+    HvCpuIdFunctionMsHvSvmFeatures              = 0x40000008,
+    HvCpuIdFunctionMsHvSkipLevelFeatures        = 0x40000009,
+    HvCpuidFunctionMsHvNestedVirtFeatures       = 0x4000000a,
+    HvCpuidFunctionMsHvIptFeatures              = 0x4000000b,
+
+    HvCpuIdFunctionMaxReserved                  = 0x4000000b
 
 } HV_CPUID_FUNCTION, *PHV_CPUID_FUNCTION;
+
+typedef union _HV_X64_PLATFORM_CAPABILITIES
+{
+    UINT64 AsUINT64[2];
+    struct
+    {
+        //
+        // Eax
+        //
+        struct
+        {
+            UINT32 AllowRedSignedCode : 1;
+            UINT32 AllowKernelModeDebugging : 1;
+            UINT32 AllowUserModeDebugging : 1;
+            UINT32 AllowTelnetServer : 1;
+            UINT32 AllowIOPorts : 1;
+            UINT32 AllowFullMsrSpace : 1;
+            UINT32 AllowPerfCounters : 1;
+            UINT32 AllowHost512MB : 1;
+            UINT32 AllowNextGenerationSupport : 1;
+            UINT32 AllowRemoteRecovery : 1;
+            UINT32 AllowStreaming : 1;
+            UINT32 AllowPushDeployment : 1;
+            UINT32 AllowPullDeployment : 1;
+            UINT32 AllowProfiling : 1;
+            UINT32 AllowJsProfiling : 1;
+            UINT32 AllowCrashDump : 1;
+            UINT32 AllowVsCrashDump : 1;
+            UINT32 AllowToolFileIO : 1;
+            UINT32 AllowConsoleMgmt : 1;
+            UINT32 AllowTracing : 1;
+            UINT32 AllowXStudio : 1;
+            UINT32 AllowGestureBuilder : 1;
+            UINT32 AllowSpeechLab : 1;
+            UINT32 AllowSmartglassStudio : 1;
+            UINT32 AllowNetworkTools : 1;
+            UINT32 AllowTcrTool : 1;
+            UINT32 AllowHostNetworkStack : 1;
+            UINT32 AllowSystemUpdateTest : 1;
+            UINT32 AllowOffChipPerfCtrStreaming : 1;
+            UINT32 AllowToolingMemory : 1;
+            UINT32 AllowSystemDowngrade : 1;
+            UINT32 AllowGreenDiskLicenses : 1;
+        };
+
+        //
+        // Ebx
+        //
+        struct
+        {
+            UINT32 IsLiveConnected : 1;
+            UINT32 IsMteBoosted : 1;
+            UINT32 IsQaSlt : 1;
+            UINT32 IsStockImage : 1;
+            UINT32 IsMsTestLab : 1;
+            UINT32 IsRetailDebugger : 1;
+            UINT32 IsXvdSrt : 1;
+            UINT32 IsGreenDebug : 1;
+            UINT32 IsHwDevTest : 1;
+            UINT32 AllowDiskLicenses : 1;
+            UINT32 AllowInstrumentation : 1;
+            UINT32 AllowWifiTester : 1;
+            UINT32 AllowWifiTesterDFS : 1;
+            UINT32 IsHwTest : 1;
+            UINT32 AllowHostOddTest : 1;
+            UINT32 IsLiveUnrestricted : 1;
+            UINT32 AllowDiscLicensesWithoutMediaAuth : 1;
+            UINT32 ReservedEbx : 15;
+        };
+
+        //
+        // Ecx
+        //
+        UINT32 ReservedEcx;
+
+        //
+        // Edx
+        //
+        struct
+        {
+            UINT32 ReservedEdx : 31;
+            UINT32 UseAlternateXvd : 1;
+        };
+    };
+} HV_X64_PLATFORM_CAPABILITIES, * PHV_X64_PLATFORM_CAPABILITIES;
+
+typedef union _HV_HYPERVISOR_NESTED_VIRT_FEATURES
+{
+    UINT64 AsUINT64[2];
+    struct
+    {
+        //
+        // Eax
+        //
+        struct
+        {
+            UINT32 EnlightenedVmcsVersionLow : 8;
+            UINT32 EnlightenedVmcsVersionHigh : 8;
+            UINT32 FlushGuestPhysicalHypercall_Deprecated : 1;
+            UINT32 NestedFlushVirtualHypercall : 1;
+            UINT32 FlushGuestPhysicalHypercall : 1;
+            UINT32 MsrBitmap : 1;
+            UINT32 VirtualizationException : 1;
+            UINT32 Reserved0 : 11;
+        };
+
+        //
+        // Ebx
+        //
+        UINT32 ReservedEbx;
+
+        //
+        // Ecx
+        //
+        UINT32 ReservedEcx;
+
+        //
+        // Edx
+        //
+        UINT32 ReservedEdx;
+    };
+} HV_HYPERVISOR_NESTED_VIRT_FEATURES, *PHV_HYPERVISOR_NESTED_VIRT_FEATURES;
+
+typedef struct _HV_VENDOR_AND_MAX_FUNCTION
+{
+    //
+    // Eax
+    //
+    UINT32 MaxFunction;
+
+    //
+    // Ebx, Ecx, Edx
+    //
+    UINT8 VendorName[12];
+} HV_VENDOR_AND_MAX_FUNCTION, *PHV_VENDOR_AND_MAX_FUNCTION;
+
+typedef struct _HV_IMPLEMENTATION_LIMITS
+{
+    //
+    // Eax
+    //
+    UINT32 MaxVirtualProcessorCount;
+
+    //
+    // Ebx
+    //
+    UINT32 MaxLogicalProcessorCount;
+
+    //
+    // Ecx
+    //
+    UINT32 MaxInterruptMappingCount;
+
+    //
+    // Edx
+    //
+    UINT32 Reserved;
+} HV_IMPLEMENTATION_LIMITS, *PHV_IMPLEMENTATION_LIMITS;
+
+typedef struct _HV_HYPERVISOR_INTERFACE_INFO
+{
+    //
+    // Eax
+    //
+    UINT32 Interface;
+
+    //
+    // Ebx
+    //
+    UINT32 Reserved1;
+
+    //
+    // Ecx
+    //
+    UINT32 Reserved2;
+
+    //
+    // Edx
+    //
+    UINT32 Reserved3;
+} HV_HYPERVISOR_INTERFACE_INFO, *PHV_HYPERVISOR_INTERFACE_INFO;
+
+typedef struct _HV_X64_HYPERVISOR_FEATURES
+{
+    //
+    // Eax, Ebx
+    //
+    HV_PARTITION_PRIVILEGE_MASK PartitionPrivileges;
+
+    //
+    // Ecx
+    //
+    struct
+    {
+        UINT32 MaxSupportedCState : 4;
+        UINT32 HpetNeededForC3PowerState_Deprecated : 1;
+        UINT32 Reserved : 27;
+    };
+
+    //
+    // Edx
+    //
+    struct
+    {
+        UINT32 MwaitAvailable_Deprecated : 1;
+        UINT32 GuestDebuggingAvailable : 1;
+        UINT32 PerformanceMonitorsAvailable : 1;
+        UINT32 CpuDynamicPartitioningAvailable : 1;
+        UINT32 XmmRegistersForFastHypercallAvailable : 1;
+        UINT32 GuestIdleAvailable : 1;
+        UINT32 HypervisorSleepStateSupportAvailable : 1;
+        UINT32 NumaDistanceQueryAvailable : 1;
+        UINT32 FrequencyRegsAvailable : 1;
+        UINT32 SyntheticMachineCheckAvailable : 1;
+        UINT32 GuestCrashRegsAvailable : 1;
+        UINT32 DebugRegsAvailable : 1;
+        UINT32 Npiep1Available : 1;
+        UINT32 DisableHypervisorAvailable : 1;
+        UINT32 ExtendedGvaRangesForFlushVirtualAddressListAvailable : 1;
+        UINT32 FastHypercallOutputAvailable : 1;
+        UINT32 SvmFeaturesAvailable : 1;
+        UINT32 SintPollingModeAvailable : 1;
+        UINT32 HypercallMsrLockAvailable : 1;
+        UINT32 DirectSyntheticTimers : 1;
+        UINT32 RegisterPatAvailable : 1;
+        UINT32 RegisterBndcfgsAvailable : 1;
+        UINT32 WatchdogTimerAvailable : 1;
+        UINT32 SyntheticTimeUnhaltedTimerAvailable : 1;
+        UINT32 DeviceDomainsAvailable : 1;
+        UINT32 S1DeviceDomainsAvailable : 1;
+        UINT32 LbrAvailable : 1;
+        UINT32 IptAvailable : 1;
+        UINT32 CrossVtlFlushAvailable : 1;
+        UINT32 Reserved1 : 3;
+    };
+} HV_X64_HYPERVISOR_FEATURES, *PHV_X64_HYPERVISOR_FEATURES;
+
+typedef struct _HV_X64_HYPERVISOR_HARDWARE_FEATURES
+{
+    //
+    // Eax
+    //
+    struct
+    {
+        UINT32 ApicOverlayAssistInUse : 1;
+        UINT32 MsrBitmapsInUse : 1;
+        UINT32 ArchitecturalPerformanceCountersInUse : 1;
+        UINT32 SecondLevelAddressTranslationInUse : 1;
+        UINT32 DmaRemappingInUse : 1;
+        UINT32 InterruptRemappingInUse : 1;
+        UINT32 MemoryPatrolScrubberPresent : 1;
+        UINT32 DmaProtectionInUse : 1;
+        UINT32 HpetRequested : 1;
+        UINT32 SyntheticTimersVolatile : 1;
+        UINT32 HypervisorLevel : 4;
+        UINT32 PhysicalDestinationModeRequired : 1;
+        UINT32 UseVmfuncForAliasMapSwitch : 1;
+        UINT32 HvRegisterForMemoryZeroingSupported : 1;
+        UINT32 UnrestrictedGuestSupported : 1;
+        UINT32 RdtAFeaturesSupported : 1;
+        UINT32 RdtMFeaturesSupported : 1;
+        UINT32 ChildPerfmonPmuSupported : 1;
+        UINT32 ChildPerfmonLbrSupported : 1;
+        UINT32 ChildPerfmonIptSupported : 1;
+        UINT32 Reserved : 9;
+    };
+
+    //
+    // Ebx
+    //
+    UINT32 ReservedEbx;
+
+    //
+    // Ecx
+    //
+    UINT32 ReservedEcx;
+
+    //
+    // Edx
+    //
+    UINT32 ReservedEdx;
+} HV_X64_HYPERVISOR_HARDWARE_FEATURES, *PHV_X64_HYPERVISOR_HARDWARE_FEATURES;
+
+typedef struct _HV_X64_ENLIGHTENMENT_INFORMATION
+{
+    struct
+    {
+        UINT32 UseHypercallForAddressSpaceSwitch : 1;
+        UINT32 UseHypercallForLocalFlush : 1;
+        UINT32 UseHypercallForRemoteFlushAndLocalFlushEntire : 1;
+        UINT32 UseApicMsrs : 1;
+        UINT32 UseHvRegisterForReset : 1;
+        UINT32 UseRelaxedTiming : 1;
+        UINT32 UseDmaRemapping_Deprecated : 1;
+        UINT32 UseInterruptRemapping_Deprecated : 1;
+        UINT32 UseX2ApicMsrs : 1;
+        UINT32 DeprecateAutoEoi : 1;
+        UINT32 UseSyntheticClusterIpi : 1;
+        UINT32 UseExProcessorMasks : 1;
+        UINT32 Nested : 1;
+        UINT32 UseIntForMbecSystemCalls : 1;
+        UINT32 UseVmcsEnlightenments : 1;
+        UINT32 UseSyncedTimeline : 1;
+        UINT32 Available : 1;
+        UINT32 UseDirectLocalFlushEntire : 1;
+        UINT32 NoNonArchitecturalCoreSharing : 1;
+        UINT32 Reserved : 13;
+    };
+
+    //
+    // Ebx
+    //
+    UINT32 LongSpinWaitCount;
+
+    //
+    // Ecx
+    //
+    struct
+    {
+        UINT32 ImplementedPhysicalAddressBits : 7;
+        UINT32 ReservedEcx : 25;
+    };
+
+    //
+    // Edx
+    //
+    UINT32 ReservedEdx;
+} HV_X64_ENLIGHTENMENT_INFORMATION, *PHV_X64_ENLIGHTENMENT_INFORMATION;
+
+typedef struct _HV_X64_HYPERVISOR_CPU_MANAGEMENT_FEATURES
+{
+    //
+    // Eax
+    //
+    struct
+    {
+        UINT32 StartLogicalProcessor : 1;
+        UINT32 CreateRootVirtualProcessor : 1;
+        UINT32 PerformanceCounterSync : 1;
+        UINT32 Reserved0 : 28;
+        UINT32 ReservedIdentityBit : 1;
+    };
+
+    //
+    // Ebx
+    //
+    struct
+    {
+            UINT32 ProcessorPowerManagement : 1;
+            UINT32 MwaitIdleStates : 1;
+            UINT32 LogicalProcessorIdling : 1;
+            UINT32 Reserved1 : 29;
+    };
+
+    //
+    // Ecx
+    //
+    struct
+    {
+        UINT32 RemapGuestUncached : 1;
+        UINT32 ReservedZ2 : 31;
+    };
+
+    //
+    // Edx
+    //
+    UINT32 ReservedEdx;
+} HV_X64_HYPERVISOR_CPU_MANAGEMENT_FEATURES, *PHV_X64_HYPERVISOR_CPU_MANAGEMENT_FEATURES;
+
+typedef struct _HV_HYPERVISOR_SVM_FEATURES
+{
+    //
+    // Eax
+    //
+    struct
+    {
+        UINT32 SvmSupported : 1;
+        UINT32 Reserved0 : 10;
+        UINT32 MaxPasidSpacePasidCount : 21;
+    };
+
+    //
+    // Ebx
+    //
+    UINT32 MaxPasidSpaceCount;
+
+    //
+    // Ecx
+    //
+    UINT32 MaxDevicePrqSize;
+
+    //
+    // Edx
+    //
+    UINT32 Reserved1;
+} HV_HYPERVISOR_SVM_FEATURES, *PHV_HYPERVISOR_SVM_FEATURES;
+
+typedef struct _HV_HYPERVISOR_IPT_FEATURES
+{
+    //
+    // Eax
+    //
+    struct
+    {
+        UINT32 ChainedToPA : 1;
+        UINT32 Enlightened : 1;
+        UINT32 Reserved0 : 10;
+        UINT32 MaxTraceBufferSizePerVtl : 20;
+    };
+
+    //
+    // Ebx
+    //
+    UINT32 Reserved1;
+
+    //
+    // Ecx
+    //
+    UINT32 Reserved2;
+
+    //
+    // Edx
+    //
+    struct
+    {
+        UINT32 HypervisorIpt : 1;
+        UINT32 Reserved3 : 31;
+    };
+} HV_HYPERVISOR_IPT_FEATURES, *PHV_HYPERVISOR_IPT_FEATURES;
 
 typedef union _HV_CPUID_RESULT
 {
@@ -3903,127 +4414,18 @@ typedef union _HV_CPUID_RESULT
 
     } VersionAndFeatures;
 
-    struct
-    {
-        //
-        // Eax
-        //
-        UINT32 MaxFunction;
-
-        //
-        // Ebx-Edx
-        //
-        UINT8 VendorName[12];
-
-    } HvVendorAndMaxFunction;
-
-    struct
-    {
-        //
-        // Eax
-        //
-        UINT32 Interface; // HV_HYPERVISOR_INTERFACE
-
-        //
-        // Ebx
-        //
-        UINT32 ReservedEbx;
-
-        //
-        // Ecx
-        //
-        UINT32 ReservedEcx;
-
-        //
-        // Edx
-        //
-        UINT32 ReservedEdx;
-
-    } HvInterface;
-
-    //
-    // Eax-Edx.
-    //
+    HV_X64_PLATFORM_CAPABILITIES MsHvPlatformCapabilities;
+    HV_HYPERVISOR_NESTED_VIRT_FEATURES MsHvNestedVirtFeatures;
+    HV_VENDOR_AND_MAX_FUNCTION HvVendorAndMaxFunction;
+    HV_HYPERVISOR_INTERFACE_INFO HvInterface;
     HV_HYPERVISOR_VERSION_INFO MsHvVersion;
-
-    struct
-    {
-        //
-        // Eax-Ebx
-        //
-        HV_PARTITION_PRIVILEGE_MASK PartitionPrivileges;
-
-        //
-        // Ecx
-        //
-        UINT32 ReservedEcx;
-
-        //
-        // Edx
-        //
-        UINT32 MwaitAvailalbe:1;
-        UINT32 GuestDebuggingAvailable:1;
-        UINT32 PerformanceMonitorsAvailable:1;
-        UINT32 CpuDynamicPartitioningAvailable : 1;
-        UINT32 XmmRegistersForFastHypercallAvailable : 1;
-        UINT32 GuestIdleAvailable : 1;
-        UINT32 Reserved1 : 26;
-
-    } MsHvFeatures;
-
-    struct
-    {
-        //
-        // Eax
-        //
-        UINT32 UseHypercallForAddressSpaceSwitch:1;
-        UINT32 UseHypercallForLocalFlush:1;
-        UINT32 UseHypercallForRemoteFlush:1;
-        UINT32 UseApicMsrs:1;
-        UINT32 UseMsrForReset:1;
-        UINT32 UseRelaxedTiming:1;
-        UINT32 Reserved:26;
-
-        //
-        // Ebx
-        //
-        UINT32 LongSpinWaitCount;
-
-        //
-        // Ecx
-        //
-        UINT32 ReservedEcx;
-
-        //
-        // Edx
-        //
-        UINT32 ReservedEdx;
-
-    } MsHvEnlightenmentInformation;
-
-    struct
-    {
-        //
-        // Eax
-        //
-        UINT32 MaxVirtualProcessorCount;
-
-        //
-        // Ebx
-        //
-        UINT32 MaxLogicalProcessorCount;
-
-        //
-        // Ecx
-        //
-        UINT32 ReservedEcx;
-
-        //
-        // Edx
-        //
-        UINT32 ReservedEdx;
-
-    } MsHvImplementationLimits;
+    HV_X64_HYPERVISOR_FEATURES MsHvFeatures;
+    HV_X64_ENLIGHTENMENT_INFORMATION MsHvEnlightenmentInformation;
+    HV_IMPLEMENTATION_LIMITS MsHvImplementationLimits;
+    HV_X64_HYPERVISOR_HARDWARE_FEATURES MsHvHardwareFeatures;
+    HV_X64_HYPERVISOR_CPU_MANAGEMENT_FEATURES MsHvCpuManagementFeatures;
+    HV_HYPERVISOR_SVM_FEATURES MsHvSvmFeatures;
+    HV_HYPERVISOR_IPT_FEATURES MsHvIptFeatures;
 
 } HV_CPUID_RESULT, *PHV_CPUID_RESULT;
 
@@ -4190,6 +4592,117 @@ typedef union _HV_GVA_RANGE
     };
 } HV_GVA_RANGE, *PHV_GVA_RANGE;
 
+typedef enum _HV_X64_SYNTHETIC_MSR
+{
+    HvSyntheticMsrGuestOsId = 0x40000000,
+    HvSyntheticMsrHypercall = 0x40000001,
+    HvSyntheticMsrVpIndex = 0x40000002,
+    HvSyntheticMsrReset = 0x40000003,
+    HvSyntheticMsrCpuMgmtVersion = 0x40000004,
+    XbSyntheticMsrTbFlushHost = 0x40000006,
+    XbSyntheticMsrTbFlush = 0x40000007,
+    XbSyntheticMsrCrash = 0x40000008,
+    XbSyntheticMsrGuestOsType = 0x40000009,
+    HvSyntheticMsrVpRuntime = 0x40000010,
+    XbSyntheticMsrRefTimeOffset = 0x40000011,
+    XbSyntheticMsrRefTscScale = 0x40000012,
+    XbSyntheticMsrVpCount = 0x40000013,
+    XbSyntheticMsrWbinvd = 0x40000014,
+    XbSyntheticMsrFlushWb = 0x40000015,
+    XbSyntheticMsrFlushTbCurrent = 0x40000016,
+    XbSyntheticMsrKcfgDone = 0x40000017,
+    XbSyntheticMsrClearSignaturePage = 0x40000018,
+    HvSyntheticMsrTimeRefCount = 0x40000020,
+    HvSyntheticMsrReferenceTsc = 0x40000021,
+    HvSyntheticMsrTscFrequency = 0x40000022,
+    HvSyntheticMsrApicFrequency = 0x40000023,
+    HvSyntheticMsrNpiepConfig = 0x40000040,
+    HvSyntheticMsrEoi = 0x40000070,
+    HvSyntheticMsrIcr = 0x40000071,
+    HvSyntheticMsrTpr = 0x40000072,
+    HvSyntheticMsrVpAssistPage = 0x40000073,
+    HvSyntheticMsrSControl = 0x40000080,
+    HvSyntheticMsrSVersion = 0x40000081,
+    HvSyntheticMsrSiefp = 0x40000082,
+    HvSyntheticMsrSimp = 0x40000083,
+    HvSyntheticMsrEom = 0x40000084,
+    HvSyntheticMsrSirb = 0x40000085,
+    HvSyntheticMsrSint0 = 0x40000090,
+    HvSyntheticMsrSint1 = 0x40000091,
+    HvSyntheticMsrSint2 = 0x40000092,
+    HvSyntheticMsrSint3 = 0x40000093,
+    HvSyntheticMsrSint4 = 0x40000094,
+    HvSyntheticMsrSint5 = 0x40000095,
+    HvSyntheticMsrSint6 = 0x40000096,
+    HvSyntheticMsrSint7 = 0x40000097,
+    HvSyntheticMsrSint8 = 0x40000098,
+    HvSyntheticMsrSint9 = 0x40000099,
+    HvSyntheticMsrSint10 = 0x4000009a,
+    HvSyntheticMsrSint11 = 0x4000009b,
+    HvSyntheticMsrSint12 = 0x4000009c,
+    HvSyntheticMsrSint13 = 0x4000009d,
+    HvSyntheticMsrSint14 = 0x4000009e,
+    HvSyntheticMsrSint15 = 0x4000009f,
+    HvSyntheticMsrSTimer0Config = 0x400000b0,
+    HvSyntheticMsrSTimer0Count = 0x400000b1,
+    HvSyntheticMsrSTimer1Config = 0x400000b2,
+    HvSyntheticMsrSTimer1Count = 0x400000b3,
+    HvSyntheticMsrSTimer2Config = 0x400000b4,
+    HvSyntheticMsrSTimer2Count = 0x400000b5,
+    HvSyntheticMsrSTimer3Config = 0x400000b6,
+    HvSyntheticMsrSTimer3Count = 0x400000b7,
+    HvSyntheticMsrPerfFeedbackTrigger = 0x400000c1,
+    HvSyntheticMsrGuestSchedulerEvent = 0x400000c2,
+    HvSyntheticMsrGuestIdle = 0x400000f0,
+    HvSyntheticMsrSynthDebugControl = 0x400000f1,
+    HvSyntheticMsrSynthDebugStatus = 0x400000f2,
+    HvSyntheticMsrSynthDebugSendBuffer = 0x400000f3,
+    HvSyntheticMsrSynthDebugReceiveBuffer = 0x400000f4,
+    HvSyntheticMsrSynthDebugPendingBuffer = 0x400000f5,
+    XbSyntheticMsrSynthDebugTransition = 0x400000f6,
+    HvSyntheticMsrDebugDeviceOptions = 0x400000ff,
+    HvSyntheticMsrCrashP0 = 0x40000100,
+    HvSyntheticMsrCrashP1 = 0x40000101,
+    HvSyntheticMsrCrashP2 = 0x40000102,
+    HvSyntheticMsrCrashP3 = 0x40000103,
+    HvSyntheticMsrCrashP4 = 0x40000104,
+    HvSyntheticMsrCrashCtl = 0x40000105,
+    HvSyntheticMsrReenlightenmentControl = 0x40000106,
+    HvSyntheticMsrTscEmulationControl = 0x40000107,
+    HvSyntheticMsrTscEmulationStatus = 0x40000108,
+    HvSyntheticMsrSWatchdogConfig = 0x40000110,
+    HvSyntheticMsrSWatchdogCount = 0x40000111,
+    HvSyntheticMsrSWatchdogStatus = 0x40000112,
+    HvSyntheticMsrSTimeUnhaltedTimerConfig = 0x40000114,
+    HvSyntheticMsrSTimeUnhaltedTimerCount = 0x40000115,
+    HvSyntheticMsrMemoryZeroingControl = 0x40000116,
+    XbSyntheticMsrFsBase = 0x40000122,
+    XbSyntheticMsrXOnly = 0x40000123,
+    HvSyntheticMsrBelow1MbPage = 0x40000200,
+    HvSyntheticMsrNestedVpIndex = 0x40001002,
+    HvSyntheticMsrNestedSControl = 0x40001080,
+    HvSyntheticMsrNestedSVersion = 0x40001081,
+    HvSyntheticMsrNestedSiefp = 0x40001082,
+    HvSyntheticMsrNestedSimp = 0x40001083,
+    HvSyntheticMsrNestedEom = 0x40001084,
+    HvSyntheticMsrNestedSirb = 0x40001085,
+    HvSyntheticMsrNestedSint0 = 0x40001090,
+    HvSyntheticMsrNestedSint1 = 0x40001091,
+    HvSyntheticMsrNestedSint2 = 0x40001092,
+    HvSyntheticMsrNestedSint3 = 0x40001093,
+    HvSyntheticMsrNestedSint4 = 0x40001094,
+    HvSyntheticMsrNestedSint5 = 0x40001095,
+    HvSyntheticMsrNestedSint6 = 0x40001096,
+    HvSyntheticMsrNestedSint7 = 0x40001097,
+    HvSyntheticMsrNestedSint8 = 0x40001098,
+    HvSyntheticMsrNestedSint9 = 0x40001099,
+    HvSyntheticMsrNestedSint10 = 0x4000109a,
+    HvSyntheticMsrNestedSint11 = 0x4000109b,
+    HvSyntheticMsrNestedSint12 = 0x4000109c,
+    HvSyntheticMsrNestedSint13 = 0x4000109d,
+    HvSyntheticMsrNestedSint14 = 0x4000109e,
+    HvSyntheticMsrNestedSint15 = 0x4000109f,
+} HV_X64_SYNTHETIC_MSR, *PHV_X64_SYNTHETIC_MSR;
 
 //
 // Define index of synthetic interrupt source that receives intercept messages.
@@ -4288,6 +4801,8 @@ typedef enum _HV_MESSAGE_TYPE
     HvMessageTypeInvalidVpRegisterValue = 0x80000020,
     HvMessageTypeUnrecoverableException = 0x80000021,
     HvMessageTypeUnsupportedFeature = 0x80000022,
+    HvMessageTypeTlbPageSizeMismatch = 0x80000023,
+    HvMessageTypeIommuFault = 0x80000024,
 
     //
     // Trace buffer complete messages.
@@ -4298,15 +4813,26 @@ typedef enum _HV_MESSAGE_TYPE
     // Hypercall intercept
     HvMessageTypeHypercallIntercept = 0x80000050,
 
+    HvMessageTypeSynicEventIntercept = 0x80000060,
+
+    HvMessageTypeSchedulerIdRangeStart = 0x80000100,
+    HvMessageTypeSchedulerVpSignalBitset = 0x80000100,
+    HvMessageTypeSchedulerVpSignalPair = 0x80000101,
+    HvMessageTypeSchedulerIdRangeEnd = 0x800001FF,
+
     //
     // Platform-specific processor intercept messages.
     //
     HvMessageTypeX64IoPortIntercept = 0x80010000,
-    HvMessageTypeX64MsrIntercept = 0x80010001,
+    HvMessageTypeMsrIntercept = 0x80010001,
     HvMessageTypeX64CpuidIntercept = 0x80010002,
-    HvMessageTypeX64ExceptionIntercept = 0x80010003,
+    HvMessageTypeExceptionIntercept = 0x80010003,
     HvMessageTypeX64ApicEoi = 0x80010004,
     HvMessageTypeX64LegacyFpError = 0x80010005,
+    HvMessageTypeX64IommuPrq = 0x80010006,
+    HvMessageTypeX64Halt = 0x80010007,
+    HvMessageTypeX64InterruptionDeliverable = 0x80010008,
+    HvMessageTypeX64SipiIntercept = 0x80010009,
 
     // 11.10.2 SynIC Message Types
     HvMessageTypeRegisterIntercept = 0x80010006,
@@ -4521,6 +5047,39 @@ typedef struct _HV_TIMER_MESSAGE_PAYLOAD
     HV_NANO100_TIME DeliveryTime;       // When the message was delivered
 } HV_TIMER_MESSAGE_PAYLOAD, *PHV_TIMER_MESSAGE_PAYLOAD;
 
+typedef enum _HV_IOMMU_FAULT_TYPE
+{
+    HvIommuTranslationFault = 0,
+    HvIommuTranslationBlocked = 1,
+    HvIommuInterruptFault = 2,
+} HV_IOMMU_FAULT_TYPE, * PHV_IOMMU_FAULT_TYPE;
+
+//
+// Define IOMMU fault message payload structure.
+//
+
+typedef struct _HV_IOMMU_FAULT_MESSAGE_PAYLOAD
+{
+    HV_IOMMU_FAULT_TYPE Type;
+    UINT8 AccessType;
+    struct
+    {
+        UINT32 FaultAddressValid : 1;
+        UINT32 DeviceIdValid : 1;
+    } Flags;
+    UINT64 LogicalDeviceId;
+    UINT64 FaultAddress;
+} HV_IOMMU_FAULT_MESSAGE_PAYLOAD, *PHV_IOMMU_FAULT_MESSAGE_PAYLOAD;
+
+//
+// Define IOMMU PRQ message payload structure.
+//
+
+typedef struct _HV_IOMMU_PRQ_MESSAGE_PAYLOAD
+{
+    UINT32 IommuId;
+} HV_IOMMU_PRQ_MESSAGE_PAYLOAD, *PHV_IOMMU_PRQ_MESSAGE_PAYLOAD;
+
 //
 // Define synthetic interrupt controller message format.
 //
@@ -4533,6 +5092,8 @@ typedef struct _HV_MESSAGE
         UINT64 Payload[HV_MESSAGE_PAYLOAD_QWORD_COUNT];
         HV_TIMER_MESSAGE_PAYLOAD TimerPayload;
         HV_EVENTLOG_MESSAGE_PAYLOAD TracePayload;
+        HV_IOMMU_PRQ_MESSAGE_PAYLOAD IommuPrqPayload;
+        HV_IOMMU_FAULT_MESSAGE_PAYLOAD IommuFaultPayload;
     };
 } HV_MESSAGE, *PHV_MESSAGE;
 
@@ -5408,6 +5969,12 @@ typedef enum _HV_GUEST_OS_MICROSOFT_IDS
 
 } HV_GUEST_OS_MICROSOFT_IDS, *PHV_GUEST_OS_MICROSOFT_IDS;
 
+typedef enum _HV_GUEST_OS_OPENSOURCE_IDS
+{
+    HvGuestOsOpenSourceLinux        = 0x0001
+
+} HV_GUEST_OS_OPENSOURCE_IDS, *PHV_GUEST_OS_OPENSOURCE_IDS;
+
 //
 // Declare the MSR used to identify the guest OS.
 //
@@ -5438,7 +6005,8 @@ typedef union _HV_X64_MSR_HYPERCALL_CONTENTS
     struct
     {
         UINT64 Enable               : 1;
-        UINT64 ReservedP            : 11;
+        UINT64 Locked               : 1;
+        UINT64 ReservedP            : 10;
         UINT64 GpaPageNumber        : 52;
     };
 } HV_X64_MSR_HYPERCALL_CONTENTS, *PHV_X64_MSR_HYPERCALL_CONTENTS;
@@ -5685,8 +6253,8 @@ typedef enum _HV_CALL_CODE
     //
     
     HvCallUpdateHvProcessorFeatures             = 0x0005,
-    HvSwitchAliasMap                            = 0x0006,
-    HvUpdateMicrocodeDatabase                   = 0x0007,
+    HvCallSwitchAliasMap                        = 0x0006,
+    HvCallUpdateMicrocodeDatabase               = 0x0007,
 
     //
     // V1 Spinwait enlightenment IDs
@@ -5698,7 +6266,7 @@ typedef enum _HV_CALL_CODE
     // V2 Core parking IDs
     //
 
-    HvCallParkLogicalProcessors                 = 0x0009,
+    HvCallParkedLogicalProcessors               = 0x0009,
 
     //
     // V2 Invoke Hypervisor debugger
@@ -5729,11 +6297,11 @@ typedef enum _HV_CALL_CODE
     // Symbols
     //
     
-    HvCallGetImageInformation                   = 0x0016,
+    HvCallQueryImageInfo                        = 0x0016,
     HvCallMapPatchPages                         = 0x0017,
     HvCallCommitPatch                           = 0x0018,
-    HvCallReserved0019                          = 0x0019,
-    HvCallReserved001a                          = 0x001a,
+    HvCallSyncContext                           = 0x0019,
+    HvCallSyncContextEx                         = 0x001a,
 
     //
     // V? CPU performance support
@@ -5838,16 +6406,16 @@ typedef enum _HV_CALL_CODE
     // V1 Interrupt Management IDs
     //
 
-    HvAssertVirtualInterruptDeprecated          = 0x0055,
+    HvCallAssertVirtualInterruptDeprecated      = 0x0055,
     HvCallClearVirtualInterrupt                 = 0x0056,
 
     //
     // V1 Port IDs
     //
 
-    HvCreatePortDeprecated                      = 0x0057,
+    HvCallCreatePortDeprecated                  = 0x0057,
     HvCallDeletePort                            = 0x0058,
-    HvConnectPortDeprecated                     = 0x0059,
+    HvCallConnectPortDeprecated                 = 0x0059,
     HvCallGetPortProperty                       = 0x005a,
     HvCallDisconnectPort                        = 0x005b,
     HvCallPostMessage                           = 0x005c,
@@ -5926,55 +6494,55 @@ typedef enum _HV_CALL_CODE
     HvCallQueryNumaDistance                     = 0x0078,
     HvCallSetLogicalProcessorProperty           = 0x0079,
     HvCallGetLogicalProcessorProperty           = 0x007a,
-    
+
     HvCallGetSystemProperty                     = 0x007b,
-    
+
     HvCallMapDeviceInterrupt                    = 0x007c,
     HvCallUnmapDeviceInterrupt                  = 0x007d,
     HvCallRetargetDeviceInterrupt               = 0x007e,
     HvCallRetargetRootDeviceInterrupt           = 0x007f,
-    
+
     HvCallMapDevicePages                        = 0x0080,
     HvCallUnmapDevicePages                      = 0x0081,
-    
+
     HvCallAttachDevice                          = 0x0082,
     HvCallDetachDevice                          = 0x0083,
-    
+
     HvCallEnterSleepState                       = 0x0084,
     HvCallNotifyStandbyTransition               = 0x0085,
     HvCallPrepareForHibernate                   = 0x0086,
-    
+
     HvCallNotifyPartitionEvent                  = 0x0087,
-    
+
     HvCallGetLogicalProcessorRegisters          = 0x0088,
     HvCallSetLogicalProcessorRegisters          = 0x0089,
     HvCallQueryAssociatedLpsforMca              = 0x008a,
-    
+
     HvCallNotifyRingEmpty                       = 0x008b,
-    
+
     HvCallInjectSyntheticMachineCheck           = 0x008c,
-    
+
     HvCallScrubPartition                        = 0x008d,
-    
+
     HvCallCollectLivedump                       = 0x008e,
-    
+
     HvCallDisableHypervisor                     = 0x008f,
-    
+
     HvCallModifySparseGpaPages                  = 0x0090,
-    
+
     HvCallRegisterInterceptResult               = 0x0091,
     HvCallUnregisterInterceptResult             = 0x0092,
-    
+
     HvCallGetCoverageData                       = 0x0093,
-    
+
     HvCallAssertVirtualInterrupt                = 0x0094,
-    
+
     HvCallCreatePort                            = 0x0095,
     HvCallConnectPort                           = 0x0096,
-    
+
     HvCallGetSpaPageList                        = 0x0097,
     HvCallReserved0098                          = 0x0098,
-    
+
     HvCallStartVirtualProcessor                 = 0x0099,
     HvCallGetVpIndexFromApicId                  = 0x009a,
 
@@ -5990,27 +6558,27 @@ typedef enum _HV_CALL_CODE
     HvCallEnablePasid                           = 0x00a4,
     HvCallDisablePasid                          = 0x00a5,
     HvCallAcknowledgePageRequest                = 0x00a6,
-    
-    HvCallCreatePrQueue                         = 0x00a7,
-    HvCallDeletePrQueue                         = 0x00a8,
-    HvCallClearPrqStalled                       = 0x00a9,
-    HvCallGetDeviceEnabled                      = 0x00aa,
-    HvCallSetDeviceEnabled                      = 0x00ab,
-    
+
+    HvCallCreateDevicePrQueue                   = 0x00a7,
+    HvCallDeleteDevicePrQueue                   = 0x00a8,
+    HvCallSetDevicePrqProperty                  = 0x00a9,
+    HvCallGetPhysicalDeviceProperty             = 0x00aa,
+    HvCallSetPhysicalDeviceProperty             = 0x00ab,
+
     HvCallTranslateVirtualAddressEx             = 0x00ac,
-    
+
     HvCallCheckForIoIntercept                   = 0x00ad,
-    
+
     HvCallSetGpaPageAttributes                  = 0x00ae,
-    
+
     HvCallFlushGuestPhysicalAddressSpace        = 0x00af,
     HvCallFlushGuestPhysicalAddressList         = 0x00b0,
-    
+
     HvCallCreateDeviceDomain                    = 0x00b1,
     HvCallAttachDeviceDomain                    = 0x00b2,
     HvCallMapDeviceGpaPages                     = 0x00b3,
     HvCallUnmapDeviceGpaPages                   = 0x00b4,
-    
+
     //
     // V? CPU Group Support
     //
@@ -6022,50 +6590,50 @@ typedef enum _HV_CALL_CODE
     HvCallGetCpuGroupAffinity                   = 0x00b9,
     HvCallGetNextCpuGroup                       = 0x00ba,
     HvCallGetNextCpuGroupPartition              = 0x00bb,
-    
+
     HvCallAddPhysicalMemory                     = 0x00bc,
-    
+
     HvCallCompleteIntercept                     = 0x00bd,
-    
+
     HvCallPrecommitGpaPages                     = 0x00be,
     HvCallUncommitGpaPages                      = 0x00bf,
 
     HvCallReserved00C0                          = 0x00c0,
     HvCallReserved00C1                          = 0x00c1,
-    
+
     HvCallDispatchVp                            = 0x00c2,
-    
+
     //
     // V? IOMMU Support
     // Symbols
     //
-    
+
     HvCallProcessIommuPrq                       = 0x00c3,
     HvCallDetachDeviceDomain                    = 0x00c4,
     HvCallDeleteDeviceDomain                    = 0x00c5,
-    HvCallReserved00C6                          = 0x00c6,
-    
+    HvCallQueryDeviceDomain                     = 0x00c6,
+
     //
     // V? Sparse Page Support
     // Symbols
     //
-    
+
     HvCallMapSparseDeviceGpaPages               = 0x00c7,
     HvCallUnmapSparseDeviceGpaPages             = 0x00c8,
     HvCallGetGpaPagesAccessState                = 0x00c9,
     HvCallGetSparseGpaPagesAccessState          = 0x00ca,
-    HvCallReserved00CB                          = 0x00cb,
+    HvCallInvokeTestFramework                   = 0x00cb,
     HvCallQueryVtlProtectionMaskRange           = 0x00cc,
     HvCallModifyVtlProtectionMaskRange          = 0x00cd,
-    HvCallReserved00CE                          = 0x00ce,
-    HvCallReserved00CF                          = 0x00cf,
-    HvCallReserved00D0                          = 0x00d0,
-    HvCallReserved00D1                          = 0x00d1,
+    HvCallConfigureDeviceDomain                 = 0x00ce,
+    HvCallQueryDeviceDomainProperties           = 0x00cf,
+    HvCallFlushDeviceDomain                     = 0x00d0,
+    HvCallFlushDeviceDomainList                 = 0x00d1,
     HvCallAcquireSparseGpaPageHostAccess        = 0x00d2,
     HvCallReleaseSparseGpaPageHostAccess        = 0x00d3,
     HvCallCheckSparseGpaPageVtlAccess           = 0x00d4,
-    HvCallReserved00D5                          = 0x00d5,
-    HvCallReserved00D6                          = 0x00d6,
+    HvCallEnableDeviceInterrupt                 = 0x00d5,
+    HvCallFlushTlb                              = 0x00d6,
     HvCallAcquireSparseSpaPageHostAccess        = 0x00d7,
     HvCallUnacquireSparseSpaPageHostAccess      = 0x00d8,
     HvCallAcceptGpaPages                        = 0x00d9,
@@ -6073,56 +6641,56 @@ typedef enum _HV_CALL_CODE
     HvCallModifySparseGpaPageHostVisibility     = 0x00db,
     HvCallLockSparseGpaPageMapping              = 0x00dc,
     HvCallUnlockSparseGpaPageMapping            = 0x00dd,
-    
-    HvCallReserved00DE                          = 0x00de,
-    
+
+    HvCallRequestProcessorHalt                  = 0x00de,
+
     HvCallGetInterceptData                      = 0x00df,
 
     HvCallQueryDeviceInterruptTarget            = 0x00e0,
-    
+
     HvCallMapVpStatePage                        = 0x00e1,
     HvCallUnmapVpStatePage                      = 0x00e2,
-    
+
     //
     // V? XSAVE Support
     // Symbols
     //
-    
+
     HvCallGetXsaveData                          = 0x00e3,
     HvCallSetXsaveData                          = 0x00e4,
-    
+
     //
     // V? LAPIC Support
     // Symbols
     //
-    
+
     HvCallGetLocalInterruptControllerState      = 0x00e5,
     HvCallSetLocalInterruptControllerState      = 0x00e6,
-    
+
     //
     // V? IPT Support
     // Symbols
     //
-    
+
     HvCallCreateIptBuffers                      = 0x00e7,
     HvCallDeleteIptBuffers                      = 0x00e8,
     HvCallControlHypervisorIptTrace             = 0x00e9,
-    
+
     //
     // V? Persisted Device Support
     // Symbols
     //
-    
+
     HvCallReserveDeviceInterrupt                = 0x00ea,
     HvCallPersistDevice                         = 0x00eb,
     HvCallUnpersistDevice                       = 0x00ec,
     HvCallPersistDeviceInterrupt                = 0x00ed,
-    
+
     //
     // V? Perf Processor Support
     // Symbols
     //
-    
+
     HvCallUpdatePerformanceStateCountersForLp   = 0x00ee,
 
     //
@@ -6526,8 +7094,11 @@ typedef struct HV_CALL_ATTRIBUTES _HV_INPUT_DELETE_VP
 typedef enum _HV_REGISTER_NAME
 {
     // Suspend Registers
-    HvRegisterExplicitSuspend   = 0x00000000,
-    HvRegisterInterceptSuspend  = 0x00000001,
+    HvRegisterExplicitSuspend           = 0x00000000,
+    HvRegisterInterceptSuspend          = 0x00000001,
+    HvRegisterInstructionEmulationHints = 0x00000002,
+    HvRegisterDispatchSuspend           = 0x00000003,
+    HvRegisterInternalActivityState     = 0x00000004,
 
     // Version
     HvRegisterHypervisorVersion = 0x00000100,
@@ -6544,6 +7115,21 @@ typedef enum _HV_REGISTER_NAME
 
     // 128-bit result same as CPUID 0x40000006
     HvRegisterHardwareFeaturesInfo      = 0x00000203,
+
+    // 128-bit result same as CPUID 0x40000007
+    HvRegisterCpuManagementFeaturesInfo = 0x00000204,
+
+    // 128-bit result same as CPUID 0x40000008
+    HvRegisterSvmFeaturesInfo           = 0x00000205,
+
+    // 128-bit result same as CPUID 0x40000009
+    HvRegisterSkipLevelFeaturesInfo     = 0x00000206,
+
+    // 128-bit result same as CPUID 0x4000000a
+    HvRegisterNestedVirtFeaturesInfo    = 0x00000207,
+
+    // 128-bit result same as CPUID 0x4000000b
+    HvRegisterIptFeaturesInfo           = 0x00000208,
 
     // Guest Crash Registers
     HvRegisterGuestCrashP0  = 0x00000210,
@@ -6574,11 +7160,21 @@ typedef enum _HV_REGISTER_NAME
     // Guest Debug
     HvRegisterDebugDeviceOptions = 0x00000260,
 
+    // Memory Zeroing
+    HvRegisterMemoryZeroingControl = 0x00000270,
+
     // Pending Interruption Register
-    HvX64RegisterPendingInterruption    = 0x00010002,
+    HvRegisterPendingInterruption = 0x00010002,
 
     // Interrupt State register
-    HvX64RegisterInterruptState         = 0x00010003,
+    HvRegisterInterruptState = 0x00010003,
+
+    // Pending Event Register
+    HvRegisterPendingEvent0     = 0x00010004,
+    HvRegisterPendingEvent1     = 0x00010005,
+
+    // Notification Register
+    HvX64RegisterDeliverabilityNotifications = 0x00010006,
 
     // User-Mode Registers
     HvX64RegisterRax                = 0x00020000,
@@ -6729,26 +7325,117 @@ typedef enum _HV_REGISTER_NAME
     HvX64RegisterMtrrFix4kF0000  = 0x00080079,
     HvX64RegisterMtrrFix4kF8000  = 0x0008007A,
 
+    // Misc x64 MSRs
+    HvX64RegisterTscAux             = 0x0008007B,
+    HvX64RegisterBndcfgs            = 0x0008007C,
+    HvX64RegisterDebugCtl           = 0x0008007D,
+    HvX64RegisterAvailable0008007E  = 0x0008007E,
+    HvX64RegisterAvailable0008007F  = 0x0008007F,
+
+    // SGX-LC MSRs
+    HvX64RegisterSgxLaunchControl0 = 0x00080080,
+    HvX64RegisterSgxLaunchControl1 = 0x00080081,
+    HvX64RegisterSgxLaunchControl2 = 0x00080082,
+    HvX64RegisterSgxLaunchControl3 = 0x00080083,
+
+    // Speculation MSRs
+    HvX64RegisterSpecCtrl       = 0x00080084,
+    HvX64RegisterPredCmd        = 0x00080085,
+    HvX64RegisterVirtSpecCtrl   = 0x00080086,
+
+    // VMX MSRs
+    HvX64RegisterMsrIa32MiscEnable          = 0x000800a0,
+    HvX64RegisterIa32FeatureControl         = 0x000800a1,
+    HvX64RegisterIa32VmxBasic               = 0x000800a2,
+    HvX64RegisterIa32VmxPinbasedCtls        = 0x000800a3,
+    HvX64RegisterIa32VmxProcbasedCtls       = 0x000800a4,
+    HvX64RegisterIa32VmxExitCtls            = 0x000800a5,
+    HvX64RegisterIa32VmxEntryCtls           = 0x000800a6,
+    HvX64RegisterIa32VmxMisc                = 0x000800a7,
+    HvX64RegisterIa32VmxCr0Fixed0           = 0x000800a8,
+    HvX64RegisterIa32VmxCr0Fixed1           = 0x000800a9,
+    HvX64RegisterIa32VmxCr4Fixed0           = 0x000800aa,
+    HvX64RegisterIa32VmxCr4Fixed1           = 0x000800ab,
+    HvX64RegisterIa32VmxVmcsEnum            = 0x000800ac,
+    HvX64RegisterIa32VmxProcbasedCtls2      = 0x000800ad,
+    HvX64RegisterIa32VmxEptVpidCap          = 0x000800ae,
+    HvX64RegisterIa32VmxTruePinbasedCtls    = 0x000800af,
+    HvX64RegisterIa32VmxTrueProcbasedCtls   = 0x000800b0,
+    HvX64RegisterIa32VmxTrueExitCtls        = 0x000800b1,
+    HvX64RegisterIa32VmxTrueEntryCtls       = 0x000800b2,
+
+    // Tracing and PMU MSRs
+    HvX64RegisterPerfGlobalCtrl     = 0x00081000,
+    HvX64RegisterPerfGlobalStatus   = 0x00081001,
+    HvX64RegisterPerfGlobalInUse    = 0x00081002,
+    HvX64RegisterFixedCtrCtrl       = 0x00081003,
+    HvX64RegisterDsArea             = 0x00081004,
+    HvX64RegisterPebsEnable         = 0x00081005,
+    HvX64RegisterPebsLdLat          = 0x00081006,
+    HvX64RegisterPebsFrontend       = 0x00081007,
+    HvX64RegisterRtitCtl            = 0x00081008,
+    HvX64RegisterRtitStatus         = 0x00081009,
+    HvX64RegisterRtitOutputBase     = 0x0008100a,
+    HvX64RegisterRtitOutputMaskPtrs = 0x0008100b,
+    HvX64RegisterRtitCr3Match       = 0x0008100c,
+
+    // Perf MSRs
+    HvX64RegisterPerfEvtSel0    = 0x00081100,
+
+    // PMC MSRs
+    HvX64RegisterPmc0           = 0x00081200,
+
+    HvX64RegisterFixedCtr0      = 0x00081300,
+
+    HvX64RegisterRtitAddr0A     = 0x00081400,
+
+    // LBR MSRs
+    HvX64RegisterLbrTos         = 0x00082000,
+    HvX64RegisterLbrSelect      = 0x00082001,
+    HvX64RegisterLerFromLip     = 0x00082002,
+    HvX64RegisterLerToLip       = 0x00082003,
+
+    HvX64RegisterLbrFrom0       = 0x00082100,
+
+    HvX64RegisterLbrTo0         = 0x00082200,
+
+    HvX64RegisterLbrInfo0       = 0x00083300,
+
+    // X2APIC MSRs
+    HvX64RegisterApicId         = 0x00084802,
+    HvX64RegisterApicVersion    = 0x00084803,
+
     // Hypervisor-defined MSRs (Misc)
-    HvX64RegisterHypervisorPresent      = 0x00090000,
+    HvRegisterVpRuntime                 = 0x00090000,
     HvX64RegisterHypercall              = 0x00090001,
-    HvX64RegisterGuestOsId              = 0x00090002,
-    HvX64RegisterVpIndex                = 0x00090003,
-    HvX64RegisterVpRuntime              = 0x00090004,
+    HvRegisterGuestOsId                 = 0x00090002,
+    HvRegisterVpIndex                   = 0x00090003,
+    HvRegisterTimeRefCount              = 0x00090004,
     HvRegisterCpuManagementVersion      = 0x00090007,
 
     // Virtual APIC registers MSRs
-    HvX64RegisterEoi                    = 0x00090010,
-    HvX64RegisterIcr                    = 0x00090011,
-    HvX64RegisterTpr                    = 0x00090012,
+    HvX64RegisterSyntheticEoi   = 0x00090010,
+    HvX64RegisterSyntheticIcr   = 0x00090011,
+    HvX64RegisterSyntheticTpr   = 0x00090012,
 
     HvRegisterVpAssistPage      = 0x00090013,
+
+    HvRegisterVpRootSignalCount = 0x00090014,
+
+    HvRegisterReferenceTsc      = 0x00090017,
 
     // Performance statistics MSRs
     HvRegisterStatsPartitionRetail      = 0x00090020,
     HvRegisterStatsPartitionInternal    = 0x00090021,
     HvRegisterStatsVpRetail             = 0x00090022,
     HvRegisterStatsVpInternal           = 0x00090023,
+
+    HvX64RegisterEmulatedTimerPeriod    = 0x00090030,
+    HvX64RegisterEmulatedTimerControl   = 0x00090031,
+    HvX64RegisterPmTimerAssist          = 0x00090032,
+
+    // Hypervisor-defined MSRs (Nested Misc)
+    HvRegisterNestedVpIndex             = 0x00091003,
 
     // Hypervisor-defined MSRs (Synic)
     HvRegisterSint0              = 0x000A0000,
@@ -6767,12 +7454,36 @@ typedef enum _HV_REGISTER_NAME
     HvRegisterSint13             = 0x000A000D,
     HvRegisterSint14             = 0x000A000E,
     HvRegisterSint15             = 0x000A000F,
-    HvRegisterSynicBase          = 0x000A0010,
+    HvRegisterScontrol           = 0x000A0010,
     HvRegisterSversion           = 0x000A0011,
     HvRegisterSifp               = 0x000A0012,
     HvRegisterSipp               = 0x000A0013,
     HvRegisterEom                = 0x000A0014,
     HvRegisterSirbp              = 0x000A0015,
+
+    // Hypervisor-defined MSRs (Nested Synic)
+    HvRegisterNestedSint0        = 0x000A1000,
+    HvRegisterNestedSint1        = 0x000A1001,
+    HvRegisterNestedSint2        = 0x000A1002,
+    HvRegisterNestedSint3        = 0x000A1003,
+    HvRegisterNestedSint4        = 0x000A1004,
+    HvRegisterNestedSint5        = 0x000A1005,
+    HvRegisterNestedSint6        = 0x000A1006,
+    HvRegisterNestedSint7        = 0x000A1007,
+    HvRegisterNestedSint8        = 0x000A1008,
+    HvRegisterNestedSint9        = 0x000A1009,
+    HvRegisterNestedSint10       = 0x000A100a,
+    HvRegisterNestedSint11       = 0x000A100b,
+    HvRegisterNestedSint12       = 0x000A100c,
+    HvRegisterNestedSint13       = 0x000A100d,
+    HvRegisterNestedSint14       = 0x000A100e,
+    HvRegisterNestedSint15       = 0x000A100f,
+    HvRegisterNestedScontrol     = 0x000A1010,
+    HvRegisterNestedSversion     = 0x000A1011,
+    HvRegisterNestedSifp         = 0x000A1012,
+    HvRegisterNestedSipp         = 0x000A1013,
+    HvRegisterNestedEom          = 0x000A1014,
+    HvRegisterNestedSirbp        = 0x000A1015,
 
     // Hypervisor-defined MSRs (Synthetic Timers)
     HvRegisterStimer0Config      = 0x000B0000,
@@ -6783,6 +7494,10 @@ typedef enum _HV_REGISTER_NAME
     HvRegisterStimer2Count       = 0x000B0005,
     HvRegisterStimer3Config      = 0x000B0006,
     HvRegisterStimer3Count       = 0x000B0007,
+
+    // Hypervisor-defined MSRs (Synthetic Time)
+    HvRegisterStimeUnhaltedTimerConfig  = 0x000B0100,
+    HvRegisterStimeUnhaltedTimerCount   = 0x000B0101,
 
     //
     // XSAVE/XRSTOR register names.
@@ -6825,34 +7540,33 @@ typedef enum _HV_REGISTER_NAME
     HvX64RegisterYmm14High           = 0x000C001E,
     HvX64RegisterYmm15High           = 0x000C001F,
 
-    // Other MSRs
-    HvX64RegisterMsrIa32MiscEnable = 0x000800A0,
-    HvX64RegisterIa32FeatureControl = 0x000800A1,
-
     // Synthetic VSM registers
-    //
-    HvRegisterVsmVpVtlControl = 0x000D0000,
-    HvRegisterVsmCodePageOffsets = 0x000D0002,
-    HvRegisterVsmVpStatus = 0x000D0003,
-    HvRegisterVsmPartitionStatus = 0x000D0004,
-    HvRegisterVsmVina = 0x000D0005,
-    HvRegisterVsmCapabilities = 0x000D0006,
-    HvRegisterVsmPartitionConfig = 0x000D0007,
-    HvRegisterVsmVpSecureConfigVtl0 = 0x000D0010,
-    HvRegisterVsmVpSecureConfigVtl1 = 0x000D0011,
-    HvRegisterVsmVpSecureConfigVtl2 = 0x000D0012,
-    HvRegisterVsmVpSecureConfigVtl3 = 0x000D0013,
-    HvRegisterVsmVpSecureConfigVtl4 = 0x000D0014,
-    HvRegisterVsmVpSecureConfigVtl5 = 0x000D0015,
-    HvRegisterVsmVpSecureConfigVtl6 = 0x000D0016,
-    HvRegisterVsmVpSecureConfigVtl7 = 0x000D0017,
-    HvRegisterVsmVpSecureConfigVtl8 = 0x000D0018,
-    HvRegisterVsmVpSecureConfigVtl9 = 0x000D0019,
-    HvRegisterVsmVpSecureConfigVtl10 = 0x000D001A,
-    HvRegisterVsmVpSecureConfigVtl11 = 0x000D001B,
-    HvRegisterVsmVpSecureConfigVtl12 = 0x000D001C,
-    HvRegisterVsmVpSecureConfigVtl13 = 0x000D001D,
-    HvRegisterVsmVpSecureConfigVtl14 = 0x000D001E,
+    HvRegisterVsmVpVtlControl           = 0x000D0000,
+    HvRegisterVsmCodePageOffsets        = 0x000D0002,
+    HvRegisterVsmVpStatus               = 0x000D0003,
+    HvRegisterVsmPartitionStatus        = 0x000D0004,
+    HvRegisterVsmVina                   = 0x000D0005,
+    HvRegisterVsmCapabilities           = 0x000D0006,
+    HvRegisterVsmPartitionConfig        = 0x000D0007,
+    HvRegisterVsmVpSecureConfigVtl0     = 0x000D0010,
+    HvRegisterVsmVpSecureConfigVtl1     = 0x000D0011,
+    HvRegisterVsmVpSecureConfigVtl2     = 0x000D0012,
+    HvRegisterVsmVpSecureConfigVtl3     = 0x000D0013,
+    HvRegisterVsmVpSecureConfigVtl4     = 0x000D0014,
+    HvRegisterVsmVpSecureConfigVtl5     = 0x000D0015,
+    HvRegisterVsmVpSecureConfigVtl6     = 0x000D0016,
+    HvRegisterVsmVpSecureConfigVtl7     = 0x000D0017,
+    HvRegisterVsmVpSecureConfigVtl8     = 0x000D0018,
+    HvRegisterVsmVpSecureConfigVtl9     = 0x000D0019,
+    HvRegisterVsmVpSecureConfigVtl10    = 0x000D001A,
+    HvRegisterVsmVpSecureConfigVtl11    = 0x000D001B,
+    HvRegisterVsmVpSecureConfigVtl12    = 0x000D001C,
+    HvRegisterVsmVpSecureConfigVtl13    = 0x000D001D,
+    HvRegisterVsmVpSecureConfigVtl14    = 0x000D001E,
+    HvRegisterVsmVpWaitForTlbLock       = 0x000D0020,
+
+    // VM Isolation
+    HvRegisterIsolationCapabilities = 0x000D0100,
 
     // 15.13.4.1 Mask Registers
     HvX64RegisterCrInterceptControl             = 0x000E0000,
@@ -7291,7 +8005,8 @@ typedef union
     {
         UINT64 EnabledVtlSet        : 16;
         UINT64 MaximumVtl           : 4;
-        UINT64 ReservedZ            : 44;
+        UINT64 MbecEnabledVtlSet    : 16;
+        UINT64 ReservedZ            : 28;
     };
 } HV_REGISTER_VSM_PARTITION_STATUS;
 
@@ -7315,10 +8030,15 @@ typedef union
     UINT64 AsUINT64;
     struct
     {
-        UINT64 EnableVtlProtection      : 1;
-        UINT64 DefaultVtlProtectionMask : 4;
-        UINT64 ZeroMemoryOnReset        : 1;
-        UINT64 ReservedZ                : 58;
+        UINT64 EnableVtlProtection          : 1;
+        UINT64 DefaultVtlProtectionMask     : 4;
+        UINT64 ZeroMemoryOnReset            : 1;
+        UINT64 DenyLowerVtlStartup          : 1;
+        UINT64 InterceptAcceptance          : 1;
+        UINT64 InterceptEnableVtlProtection : 1;
+        UINT64 InterceptVpStartup           : 1;
+        UINT64 InterceptCpuidUnimplemented  : 1;
+        UINT64 ReservedZ                    : 53;
     };
 } HV_REGISTER_VSM_PARTITION_CONFIG;
 
@@ -7409,31 +8129,32 @@ typedef union
     UINT64 AsUINT64;
     struct
     {
-        UINT64 Cr0Write             : 1; // 0x0000000000000001
-        UINT64 Cr4Write             : 1; // 0x0000000000000002
-        UINT64 XCr0Write            : 1; // 0x0000000000000004
-        UINT64 IA32MiscEnableRead   : 1; // 0x0000000000000008
-        UINT64 IA32MiscEnableWrite  : 1; // 0x0000000000000010
-        UINT64 MsrLstarRead         : 1; // 0x0000000000000020
-        UINT64 MsrLstarWrite        : 1; // 0x0000000000000040
-        UINT64 MsrStarRead          : 1; // 0x0000000000000080
-        UINT64 MsrStarWrite         : 1; // 0x0000000000000100
-        UINT64 MsrCstarRead         : 1; // 0x0000000000000200
-        UINT64 MsrCstarWrite        : 1; // 0x0000000000000400
-        UINT64 ApicBaseMsrRead      : 1; // 0x0000000000000800
-        UINT64 ApicBaseMsrWrite     : 1; // 0x0000000000001000
-        UINT64 MsrEferRead          : 1; // 0x0000000000002000
-        UINT64 MsrEferWrite         : 1; // 0x0000000000004000
-        UINT64 GdtrWrite            : 1; // 0x0000000000008000
-        UINT64 IdtrWrite            : 1; // 0x0000000000010000
-        UINT64 LdtrWrite            : 1; // 0x0000000000020000
-        UINT64 TrWrite              : 1; // 0x0000000000040000
-        UINT64 MsrSysenterCsWrite   : 1; // 0x0000000000080000
-        UINT64 MsrSysenterEipWrite  : 1; // 0x0000000000100000
-        UINT64 MsrSysenterEspWrite  : 1; // 0x0000000000200000
-        UINT64 MsrSfmaskWrite       : 1; // 0x0000000000400000
-        UINT64 MsrTscAuxWrite       : 1; // 0x0000000000800000
-        UINT64 RsvdZ                : 40;
+        UINT64 Cr0Write                 : 1; // 0x0000000000000001
+        UINT64 Cr4Write                 : 1; // 0x0000000000000002
+        UINT64 XCr0Write                : 1; // 0x0000000000000004
+        UINT64 IA32MiscEnableRead       : 1; // 0x0000000000000008
+        UINT64 IA32MiscEnableWrite      : 1; // 0x0000000000000010
+        UINT64 MsrLstarRead             : 1; // 0x0000000000000020
+        UINT64 MsrLstarWrite            : 1; // 0x0000000000000040
+        UINT64 MsrStarRead              : 1; // 0x0000000000000080
+        UINT64 MsrStarWrite             : 1; // 0x0000000000000100
+        UINT64 MsrCstarRead             : 1; // 0x0000000000000200
+        UINT64 MsrCstarWrite            : 1; // 0x0000000000000400
+        UINT64 ApicBaseMsrRead          : 1; // 0x0000000000000800
+        UINT64 ApicBaseMsrWrite         : 1; // 0x0000000000001000
+        UINT64 MsrEferRead              : 1; // 0x0000000000002000
+        UINT64 MsrEferWrite             : 1; // 0x0000000000004000
+        UINT64 GdtrWrite                : 1; // 0x0000000000008000
+        UINT64 IdtrWrite                : 1; // 0x0000000000010000
+        UINT64 LdtrWrite                : 1; // 0x0000000000020000
+        UINT64 TrWrite                  : 1; // 0x0000000000040000
+        UINT64 MsrSysenterCsWrite       : 1; // 0x0000000000080000
+        UINT64 MsrSysenterEipWrite      : 1; // 0x0000000000100000
+        UINT64 MsrSysenterEspWrite      : 1; // 0x0000000000200000
+        UINT64 MsrSfmaskWrite           : 1; // 0x0000000000400000
+        UINT64 MsrTscAuxWrite           : 1; // 0x0000000000800000
+        UINT64 MsrSgxLaunchControlWrite : 1; // 0x0000000001000000
+        UINT64 RsvdZ                    : 39;
     };
 } HV_REGISTER_CR_INTERCEPT_CONTROL;
 
