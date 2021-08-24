@@ -6254,7 +6254,7 @@ typedef enum _HV_CALL_CODE
     
     HvCallUpdateHvProcessorFeatures             = 0x0005,
     HvCallSwitchAliasMap                        = 0x0006,
-    HvCallUpdateMicrocodeDatabase               = 0x0007,
+    HvCallUpdateMicrocode                       = 0x0007,
 
     //
     // V1 Spinwait enlightenment IDs
@@ -6266,7 +6266,7 @@ typedef enum _HV_CALL_CODE
     // V2 Core parking IDs
     //
 
-    HvCallParkedLogicalProcessors               = 0x0009,
+    HvCallParkedVirtualProcessors               = 0x0009,
 
     //
     // V2 Invoke Hypervisor debugger
@@ -6298,7 +6298,7 @@ typedef enum _HV_CALL_CODE
     //
     
     HvCallQueryImageInfo                        = 0x0016,
-    HvCallMapPatchPages                         = 0x0017,
+    HvCallMapImagePages                         = 0x0017,
     HvCallCommitPatch                           = 0x0018,
     HvCallSyncContext                           = 0x0019,
     HvCallSyncContextEx                         = 0x001a,
@@ -6308,8 +6308,8 @@ typedef enum _HV_CALL_CODE
     // Symbols
     //
     
-    HvCallReadPerfRegister                      = 0x001b,
-    HvCallWritePerfRegister                     = 0x001c,
+    HvCallSetPerfRegister                       = 0x001b,
+    HvCallGetPerfRegister                       = 0x001c,
     
     //
     // Expansion support
@@ -6502,8 +6502,8 @@ typedef enum _HV_CALL_CODE
     HvCallRetargetDeviceInterrupt               = 0x007e,
     HvCallRetargetRootDeviceInterrupt           = 0x007f,
 
-    HvCallMapDevicePages                        = 0x0080,
-    HvCallUnmapDevicePages                      = 0x0081,
+    HvCallAssertDeviceInterrupt                 = 0x0080,
+    HvCallReserved0081                          = 0x0081,
 
     HvCallAttachDevice                          = 0x0082,
     HvCallDetachDevice                          = 0x0083,
@@ -6516,9 +6516,9 @@ typedef enum _HV_CALL_CODE
 
     HvCallGetLogicalProcessorRegisters          = 0x0088,
     HvCallSetLogicalProcessorRegisters          = 0x0089,
-    HvCallQueryAssociatedLpsforMca              = 0x008a,
+    HvCallQueryAssociatedLpsForMca              = 0x008a,
 
-    HvCallNotifyRingEmpty                       = 0x008b,
+    HvCallNotifyPortRingEmpty                   = 0x008b,
 
     HvCallInjectSyntheticMachineCheck           = 0x008c,
 
@@ -6547,7 +6547,7 @@ typedef enum _HV_CALL_CODE
     HvCallGetVpIndexFromApicId                  = 0x009a,
 
     HvCallGetPowerProperty                      = 0x009b,
-    HvCallSetPowerProperty                      = 0x009C,
+    HvCallSetPowerProperty                      = 0x009c,
     HvCallCreatePasidSpace                      = 0x009d,
     HvCallDeletePasidSpace                      = 0x009e,
     HvCallSetPasidAddressSpace                  = 0x009f,
@@ -6557,7 +6557,7 @@ typedef enum _HV_CALL_CODE
     HvCallDetachPasidSpace                      = 0x00a3,
     HvCallEnablePasid                           = 0x00a4,
     HvCallDisablePasid                          = 0x00a5,
-    HvCallAcknowledgePageRequest                = 0x00a6,
+    HvCallAcknowledgeDevicePageRequest          = 0x00a6,
 
     HvCallCreateDevicePrQueue                   = 0x00a7,
     HvCallDeleteDevicePrQueue                   = 0x00a8,
@@ -6598,8 +6598,8 @@ typedef enum _HV_CALL_CODE
     HvCallPrecommitGpaPages                     = 0x00be,
     HvCallUncommitGpaPages                      = 0x00bf,
 
-    HvCallReserved00C0                          = 0x00c0,
-    HvCallReserved00C1                          = 0x00c1,
+    HvCallSignalEventDirect                     = 0x00c0,
+    HvCallPostMessageDirect                     = 0x00c1,
 
     HvCallDispatchVp                            = 0x00c2,
 
@@ -6635,7 +6635,7 @@ typedef enum _HV_CALL_CODE
     HvCallEnableDeviceInterrupt                 = 0x00d5,
     HvCallFlushTlb                              = 0x00d6,
     HvCallAcquireSparseSpaPageHostAccess        = 0x00d7,
-    HvCallUnacquireSparseSpaPageHostAccess      = 0x00d8,
+    HvCallReleaseSparseSpaPageHostAccess        = 0x00d8,
     HvCallAcceptGpaPages                        = 0x00d9,
     HvCallUnacceptGpaPages                      = 0x00da,
     HvCallModifySparseGpaPageHostVisibility     = 0x00db,
@@ -6656,16 +6656,16 @@ typedef enum _HV_CALL_CODE
     // Symbols
     //
 
-    HvCallGetXsaveData                          = 0x00e3,
-    HvCallSetXsaveData                          = 0x00e4,
+    HvCallGetVpState                            = 0x00e3,
+    HvCallSetVpState                            = 0x00e4,
 
     //
     // V? LAPIC Support
     // Symbols
     //
 
-    HvCallGetLocalInterruptControllerState      = 0x00e5,
-    HvCallSetLocalInterruptControllerState      = 0x00e6,
+    HvCallGetVpSetFromMda                       = 0x00e5,
+    HvCallReserved00E6                          = 0x00e6,
 
     //
     // V? IPT Support
@@ -6691,11 +6691,27 @@ typedef enum _HV_CALL_CODE
     // Symbols
     //
 
-    HvCallUpdatePerformanceStateCountersForLp   = 0x00ee,
+    HvCallRefreshPerformanceCounters            = 0x00ee,
+    HvCallImportIsolatedPages                   = 0x00ef,
+    HvCallCompletePendingIsolatedPagesImport    = 0x00f0,
+    HvCallCompleteIsolatedImport                = 0x00f1,
+    HvCallIssueSnpPspGuestRequest               = 0x00f2,
+    HvCallRootSignalEvent                       = 0x00f3,
+    HvCallGetVpCpuidValues                      = 0x00f4,
+    HvCallReadSystemMemory                      = 0x00f5,
+    HvCallSetHwWatchdogConfig                   = 0x00f6,
+    HvCallRemovePhysicalMemory                  = 0x00f7,
+    HvCallLogHypervisorSystemConfig             = 0x00f8,
+    HvCallIssueNestedSnpPspRequests             = 0x00f9,
+    HvCallCompleteSnpPspRequests                = 0x00fa,
+    HvCallSubsumeInitializedMemory              = 0x00fb,
+    HvCallSubsumeVp                             = 0x00fc,
+    HvCallDestroySubsumedContext                = 0x00fd,
 
     //
     // Total of all hypercalls
     //
+            
     HvCallCount
 
 } HV_CALL_CODE, *PHV_CALL_CODE;
